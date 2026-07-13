@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import { logout } from "./login/actions";
 import DailyLogForm, { type DailyLog } from "@/components/DailyLogForm";
 import LogHistory from "@/components/LogHistory";
@@ -20,6 +22,8 @@ export default async function Home({
   if (!user) {
     redirect("/login");
   }
+
+  const admin = await isCurrentUserAdmin();
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -47,14 +51,24 @@ export default async function Home({
             <h1 className="text-lg font-semibold text-rose-900">Mi registro diario 🌸</h1>
             <p className="text-xs text-rose-700/60">{user.email}</p>
           </div>
-          <form action={logout}>
-            <button
-              type="submit"
-              className="rounded-lg px-3 py-1.5 text-sm text-rose-600 transition hover:bg-rose-50"
-            >
-              Cerrar sesión
-            </button>
-          </form>
+          <div className="flex items-center gap-2">
+            {admin && (
+              <Link
+                href="/admin"
+                className="rounded-lg bg-rose-100 px-3 py-1.5 text-sm font-medium text-rose-700 transition hover:bg-rose-200"
+              >
+                🛡️ Panel
+              </Link>
+            )}
+            <form action={logout}>
+              <button
+                type="submit"
+                className="rounded-lg px-3 py-1.5 text-sm text-rose-600 transition hover:bg-rose-50"
+              >
+                Cerrar sesión
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 
