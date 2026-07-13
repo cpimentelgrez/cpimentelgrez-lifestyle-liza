@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { login } from "./actions";
 
@@ -10,7 +11,18 @@ export default async function LoginPage({
 
   return (
     <main className="flex min-h-full flex-1 items-center justify-center bg-rose-50 px-4 py-12">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-sm ring-1 ring-rose-100">
+      <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-rose-100">
+        <div className="relative h-56 w-full">
+          <Image
+            src="/portada.jpg"
+            alt="Portada"
+            fill
+            priority
+            sizes="(max-width: 640px) 100vw, 384px"
+            className="object-cover"
+          />
+        </div>
+        <div className="p-8">
         <h1 className="text-2xl font-semibold text-rose-900">Hola de nuevo 🌸</h1>
         <p className="mt-1 text-sm text-rose-700/70">
           Inicia sesión para ver tu registro diario.
@@ -71,6 +83,7 @@ export default async function LoginPage({
             Crea una
           </Link>
         </p>
+        </div>
       </div>
     </main>
   );
