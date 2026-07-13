@@ -1,36 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lifestyle · Registro diario 🌸
 
-## Getting Started
+Plataforma de estilo de vida. **Módulo 1: Registro diario** — permite a cada usuaria
+registrar cada día su alimentación, energía, ánimo, medicación, ansiedad y cumplimiento
+de tareas. Cada persona tiene su cuenta y solo ve sus propios datos.
 
-First, run the development server:
+Construido con **Next.js 16 + TypeScript + Tailwind CSS** y **Supabase** (autenticación +
+base de datos en la nube).
+
+---
+
+## 🚀 Puesta en marcha (paso a paso)
+
+### 1. Crea un proyecto en Supabase (gratis)
+
+1. Entra en <https://supabase.com> y crea una cuenta.
+2. Pulsa **New project**. Ponle un nombre (ej. `lifestyle-liza`) y elige una contraseña
+   para la base de datos (guárdala).
+3. Espera 1-2 minutos a que el proyecto se cree.
+
+### 2. Crea las tablas
+
+1. En el panel de Supabase, ve a **SQL Editor** (icono de terminal en la barra izquierda).
+2. Pulsa **New query**.
+3. Abre el archivo [`supabase/schema.sql`](supabase/schema.sql) de este proyecto, copia
+   **todo** su contenido y pégalo en el editor.
+4. Pulsa **Run**. Debería decir *Success*.
+
+### 3. Copia tus claves de API
+
+1. En Supabase, ve a **Project Settings** (rueda dentada) → **API**.
+2. Copia estos dos valores:
+   - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
+   - **anon public** key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. Abre el archivo `.env.local` de este proyecto y pégalos:
+
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxx.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
+   ```
+
+> ℹ️ La clave `anon` es pública y segura para usar en el navegador: la seguridad real la
+> da el **Row Level Security** que activa el script SQL (cada usuaria solo accede a lo suyo).
+
+### 4. (Opcional) Desactiva la confirmación por email para probar más rápido
+
+Mientras pruebas con tu amiga, en **Authentication → Providers → Email** puedes desactivar
+*"Confirm email"* para que las cuentas nuevas entren directamente sin verificar el correo.
+Cuando lo pongas en producción, vuelve a activarlo.
+
+### 5. Arranca la app
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre <http://localhost:3000>. Te llevará a la pantalla de inicio de sesión.
+Crea una cuenta en **"Crea una"** y empieza a registrar tu día.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📋 Qué se registra cada día
 
-## Learn More
+- 🍽️ **Alimentación** — valoración 1-5 + notas
+- ⚡ **Energía** — escala 1-5
+- 😊 **Ánimo** — escala 1-5
+- 😰 **Ansiedad** — escala 1-5
+- 💊 **Medicación** — si la tomó + notas
+- ✅ **Cumplimiento de tareas** — porcentaje 0-100 % + notas
+- 📝 **Notas** libres del día
 
-To learn more about Next.js, take a look at the following resources:
+Hay **un registro por día** por usuaria (si guardas otra vez el mismo día, se actualiza).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🧱 Estructura del proyecto
 
-## Deploy on Vercel
+```
+src/
+  app/
+    page.tsx            → Dashboard: formulario de hoy + historial
+    login/              → Inicio de sesión + Server Actions de auth
+    signup/             → Registro de cuenta
+    logs/actions.ts     → Guardar / borrar registros diarios
+  components/
+    DailyLogForm.tsx    → Formulario del registro diario
+    LogHistory.tsx      → Lista del historial
+    ScaleField.tsx      → Selector de escala 1-5
+  lib/supabase/         → Clientes de Supabase (browser, server, middleware)
+  middleware.ts         → Protege las rutas privadas
+supabase/
+  schema.sql            → Tablas + seguridad (ejecutar en Supabase)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🌱 Próximos módulos (ideas)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Este es el primer apartado. La estructura está lista para añadir más secciones de la
+plataforma lifestyle (gráficas de evolución, recordatorios, hábitos, etc.).
