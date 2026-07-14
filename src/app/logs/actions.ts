@@ -71,11 +71,11 @@ export async function saveDailyLog(formData: FormData) {
     .upsert(payload, { onConflict: "user_id,log_date" });
 
   if (error) {
-    redirect(`/?error=${encodeURIComponent(error.message)}`);
+    redirect(`/registro?error=${encodeURIComponent(error.message)}`);
   }
 
-  revalidatePath("/");
-  redirect("/?guardado=1");
+  revalidatePath("/registro");
+  redirect("/registro?guardado=1");
 }
 
 export async function deleteDailyLog(formData: FormData) {
@@ -94,6 +94,6 @@ export async function deleteDailyLog(formData: FormData) {
     await supabase.from("daily_logs").delete().eq("id", id).eq("user_id", user.id);
   }
 
-  revalidatePath("/");
-  redirect("/");
+  revalidatePath("/registro");
+  redirect("/registro");
 }

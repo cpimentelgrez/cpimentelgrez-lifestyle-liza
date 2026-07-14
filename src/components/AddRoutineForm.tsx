@@ -4,10 +4,21 @@ import { useState } from "react";
 import { addRoutine } from "@/app/rutinas/actions";
 import { WEEKDAY_SHORT } from "@/lib/rutinas";
 
+const SUGGESTIONS = [
+  "Gimnasio",
+  "Limpiar",
+  "Cocinar",
+  "Paseo de Lily",
+  "Lavar ropa",
+  "Supermercado",
+  "Pagar cuentas",
+];
+
 // Formulario para añadir una rutina (fija con días, u ocasional).
 export default function AddRoutineForm() {
   const [occasional, setOccasional] = useState(false);
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [name, setName] = useState("");
 
   function toggleDay(d: number) {
     setDays((prev) =>
@@ -26,9 +37,23 @@ export default function AddRoutineForm() {
           name="name"
           type="text"
           required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           placeholder="Ej. Limpiar, Paseo de Lily, Supermercado…"
           className="mt-1 w-full rounded-lg border border-rose-200 px-3 py-2 text-rose-900 outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-200"
         />
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {SUGGESTIONS.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setName(s)}
+              className="rounded-full border border-rose-200 px-2.5 py-0.5 text-xs text-rose-600 transition hover:bg-rose-100"
+            >
+              + {s}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-4">

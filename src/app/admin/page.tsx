@@ -41,7 +41,7 @@ export default async function AdminPage() {
               href="/"
               className="rounded-lg px-3 py-1.5 text-sm text-rose-600 transition hover:bg-rose-50"
             >
-              Mi registro
+              🏠 Inicio
             </Link>
             <form action={logout}>
               <button
