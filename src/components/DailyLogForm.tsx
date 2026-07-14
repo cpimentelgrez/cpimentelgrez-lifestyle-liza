@@ -1,5 +1,6 @@
 import { saveDailyLog } from "@/app/logs/actions";
 import ScaleField from "./ScaleField";
+import MedicationList, { type Medication } from "./MedicationList";
 
 export type DailyLog = {
   id: string;
@@ -11,6 +12,7 @@ export type DailyLog = {
   anxiety: number | null;
   medication_taken: boolean | null;
   medication_notes: string | null;
+  medications: Medication[] | null;
   tasks_completion: number | null;
   tasks_notes: string | null;
   notes: string | null;
@@ -19,9 +21,11 @@ export type DailyLog = {
 export default function DailyLogForm({
   today,
   existing,
+  initialMedications,
 }: {
   today: string;
   existing: DailyLog | null;
+  initialMedications: Medication[];
 }) {
   return (
     <form action={saveDailyLog} className="space-y-6">
@@ -96,10 +100,15 @@ export default function DailyLogForm({
           />
           Tomé mi medicación hoy
         </label>
+
+        <div className="mt-4">
+          <MedicationList initial={initialMedications} />
+        </div>
+
         <textarea
           name="medication_notes"
           rows={2}
-          placeholder="Notas sobre la medicación (dosis, horarios, efectos...)"
+          placeholder="Notas adicionales (efectos, cambios, observaciones...)"
           defaultValue={existing?.medication_notes ?? ""}
           className="mt-3 w-full rounded-lg border border-rose-200 px-3 py-2 text-sm text-rose-900 outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-200"
         />

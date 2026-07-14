@@ -16,6 +16,26 @@ function str(value: FormDataEntryValue | null): string | null {
   return s === "" ? null : s;
 }
 
+// Parsea la lista de medicamentos (JSON) y descarta filas vacías.
+function parseMedications(
+  value: FormDataEntryValue | null,
+): { name: string; dose: string; schedule: string }[] {
+  try {
+    const arr = JSON.parse(String(value ?? "[]"));
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .map((m) => ({
+        name: String(m?.name ?? "").trim(),
+        dose: String(m?.dose ?? "").trim(),
+        schedule: String(m?.schedule ?? "").trim(),
+      }))
+      .filter((m) => m.name || m.dose || m.schedule)
+      .slice(0, 30);
+  } catch {
+    return [];
+  }
+}
+
 export async function saveDailyLog(formData: FormData) {
   const supabase = await createClient();
 
@@ -39,6 +59,7 @@ export async function saveDailyLog(formData: FormData) {
     anxiety: num(formData.get("anxiety")),
     medication_taken: formData.get("medication_taken") === "on",
     medication_notes: str(formData.get("medication_notes")),
+    medications: parseMedications(formData.get("medications")),
     tasks_completion: num(formData.get("tasks_completion")),
     tasks_notes: str(formData.get("tasks_notes")),
     notes: str(formData.get("notes")),

@@ -43,6 +43,13 @@ export default async function Home({
     .order("log_date", { ascending: false })
     .limit(30);
 
+  // Medicamentos a mostrar: los de hoy si ya hay registro; si no, se copian
+  // del último día registrado para no tener que reescribirlos cada día.
+  const initialMedications =
+    (todayLog as DailyLog | null)?.medications ??
+    (history as DailyLog[] | null)?.[0]?.medications ??
+    [];
+
   return (
     <div className="min-h-full bg-rose-50">
       <header className="border-b border-rose-100 bg-white">
@@ -91,7 +98,11 @@ export default async function Home({
               ? "Ya guardaste un registro hoy. Puedes editarlo cuando quieras."
               : "Rellena lo que quieras. Nada es obligatorio."}
           </p>
-          <DailyLogForm today={today} existing={(todayLog as DailyLog) ?? null} />
+          <DailyLogForm
+            today={today}
+            existing={(todayLog as DailyLog) ?? null}
+            initialMedications={initialMedications}
+          />
         </section>
 
         <section>
