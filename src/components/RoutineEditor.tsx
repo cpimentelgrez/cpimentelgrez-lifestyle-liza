@@ -20,7 +20,8 @@ export default function RoutineEditor({ routine }: { routine: Routine }) {
   const [newSub, setNewSub] = useState("");
 
   // Las sugerencias de limpieza solo aparecen en tareas de limpieza.
-  const isCleaning = /limpi|aseo|limpieza/i.test(routine.name);
+  // Se usa \baseo\b para no confundir "paseo" con "aseo".
+  const isCleaning = /limpi|\baseo\b/i.test(routine.name);
   const suggestions = isCleaning
     ? CLEANING_SUBTASKS.filter((s) => !routine.subtasks.includes(s))
     : [];
