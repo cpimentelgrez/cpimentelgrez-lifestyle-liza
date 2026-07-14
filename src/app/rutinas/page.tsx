@@ -2,8 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "../login/actions";
-import { deleteRoutine, moveRoutine } from "./actions";
+import { moveRoutine } from "./actions";
 import CompletionToggle from "@/components/CompletionToggle";
+import SubtaskChecklist from "@/components/SubtaskChecklist";
+import RoutineEditor from "@/components/RoutineEditor";
 import AddRoutineForm from "@/components/AddRoutineForm";
 import {
   type Routine,
@@ -17,7 +19,7 @@ import {
   todayStr,
 } from "@/lib/rutinas";
 
-const ROUTINE_SELECT = "id, name, time_of_day, weekdays, is_occasional, sort";
+const ROUTINE_SELECT = "id, name, time_of_day, weekdays, is_occasional, sort, subtasks";
 
 export default async function RutinasPage() {
   const supabase = await createClient();
@@ -48,6 +50,7 @@ export default async function RutinasPage() {
         time_of_day: r.time_of_day,
         weekdays: r.weekdays,
         is_occasional: r.is_occasional,
+        subtasks: r.subtasks,
         sort: i,
       })),
     );
@@ -62,13 +65,27 @@ export default async function RutinasPage() {
 
   const { data: completionsData } = await supabase
     .from("routine_completions")
-    .select("routine_id")
+    .select("routine_id, done_subtasks")
     .eq("user_id", user.id)
     .eq("log_date", today);
 
-  const doneToday = new Set(
-    (completionsData ?? []).map((c: { routine_id: string }) => c.routine_id),
+  const completions = (completionsData ?? []) as {
+    routine_id: string;
+    done_subtasks: string[];
+  }[];
+  const rowExists = new Set(completions.map((c) => c.routine_id));
+  const doneSubtasks = new Map(
+    completions.map((c) => [c.routine_id, c.done_subtasks ?? []]),
   );
+
+  // ¿Una rutina cuenta como hecha hoy?
+  function routineDone(r: Routine): boolean {
+    if (r.subtasks.length > 0) {
+      const done = new Set(doneSubtasks.get(r.id) ?? []);
+      return r.subtasks.every((s) => done.has(s));
+    }
+    return rowExists.has(r.id);
+  }
 
   const fixed = routines.filter((r) => !r.is_occasional);
   const occasional = routines.filter((r) => r.is_occasional);
@@ -83,18 +100,41 @@ export default async function RutinasPage() {
     if (r.weekdays.includes(weekday)) todaysByTime[r.time_of_day].push(r);
   }
 
-  const totalHoy = TIME_ORDER.reduce((n, t) => n + todaysByTime[t].length, 0);
-  const hechasHoy = TIME_ORDER.reduce(
-    (n, t) => n + todaysByTime[t].filter((r) => doneToday.has(r.id)).length,
-    0,
-  );
+  const todaysList = TIME_ORDER.flatMap((t) => todaysByTime[t]);
+  const totalHoy = todaysList.length;
+  const hechasHoy = todaysList.filter(routineDone).length;
+
+  // Renderiza un ítem del checklist (con o sin subtareas).
+  function renderItem(r: Routine) {
+    if (r.subtasks.length > 0) {
+      return (
+        <SubtaskChecklist
+          key={r.id}
+          routineId={r.id}
+          logDate={today}
+          name={r.name}
+          subtasks={r.subtasks}
+          done={doneSubtasks.get(r.id) ?? []}
+        />
+      );
+    }
+    return (
+      <CompletionToggle
+        key={r.id}
+        routineId={r.id}
+        logDate={today}
+        done={rowExists.has(r.id)}
+        label={r.name}
+      />
+    );
+  }
 
   return (
     <div className="min-h-full bg-rose-50">
       <header className="border-b border-rose-100 bg-white">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
           <div>
-            <h1 className="text-lg font-semibold text-rose-900">Súper adulta 🧹</h1>
+            <h1 className="text-lg font-semibold text-rose-900">Súper adulta 💪</h1>
             <p className="text-xs text-rose-700/60">Rutinas y tareas · {user.email}</p>
           </div>
           <div className="flex items-center gap-2">
@@ -141,15 +181,7 @@ export default async function RutinasPage() {
                       {TIME_LABELS[t]}
                     </p>
                     <div className="space-y-2">
-                      {todaysByTime[t].map((r) => (
-                        <CompletionToggle
-                          key={r.id}
-                          routineId={r.id}
-                          logDate={today}
-                          done={doneToday.has(r.id)}
-                          label={r.name}
-                        />
-                      ))}
+                      {todaysByTime[t].map(renderItem)}
                     </div>
                   </div>
                 ) : null,
@@ -160,39 +192,79 @@ export default async function RutinasPage() {
                   <p className="mb-2 text-sm font-semibold text-rose-800">
                     📦 Ocasionales
                   </p>
-                  <div className="space-y-2">
-                    {occasional.map((r) => (
-                      <CompletionToggle
-                        key={r.id}
-                        routineId={r.id}
-                        logDate={today}
-                        done={doneToday.has(r.id)}
-                        label={r.name}
-                      />
-                    ))}
-                  </div>
+                  <div className="space-y-2">{occasional.map(renderItem)}</div>
                 </div>
               )}
             </div>
           )}
         </section>
 
+        {/* Vista semanal completa */}
+        {fixed.length > 0 && (
+          <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-rose-100">
+            <h2 className="text-lg font-semibold text-rose-900">Vista semanal</h2>
+            <p className="mt-1 text-sm text-rose-700/60">
+              Qué rutina toca cada día de la semana.
+            </p>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr>
+                    <th className="p-2 text-left font-medium text-rose-700/70">
+                      Tarea
+                    </th>
+                    {[1, 2, 3, 4, 5, 6, 7].map((d) => (
+                      <th
+                        key={d}
+                        className={`p-2 text-center font-medium ${
+                          d === weekday
+                            ? "rounded-t-md bg-rose-100 text-rose-800"
+                            : "text-rose-700/70"
+                        }`}
+                      >
+                        {WEEKDAY_SHORT[d]}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {fixed.map((r) => (
+                    <tr key={r.id} className="border-t border-rose-100">
+                      <td className="p-2 text-rose-900">{r.name}</td>
+                      {[1, 2, 3, 4, 5, 6, 7].map((d) => (
+                        <td
+                          key={d}
+                          className={`p-2 text-center ${
+                            d === weekday ? "bg-rose-50" : ""
+                          }`}
+                        >
+                          {r.weekdays.includes(d) ? (
+                            <span className="inline-block h-3 w-3 rounded-full bg-rose-400" />
+                          ) : (
+                            <span className="inline-block h-3 w-3 rounded-full bg-rose-100" />
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
         {/* Horario semanal / gestor de rutinas */}
         <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-rose-100">
           <h2 className="text-lg font-semibold text-rose-900">Mi horario semanal</h2>
           <p className="mt-1 text-sm text-rose-700/60">
-            Define tus rutinas y en qué días toca cada una.
+            Ajusta días, rango horario y subtareas de cada rutina.
           </p>
 
           {routines.length > 0 && (
-            <ul className="mt-4 space-y-2">
+            <ul className="mt-4 space-y-3">
               {routines.map((r, index) => (
-                <li
-                  key={r.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-rose-100 px-3 py-2"
-                >
-                  {/* Botones de ordenar */}
-                  <div className="flex flex-col">
+                <li key={r.id} className="flex gap-2">
+                  <div className="flex flex-col pt-1">
                     <form action={moveRoutine}>
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="dir" value="up" />
@@ -218,33 +290,9 @@ export default async function RutinasPage() {
                       </button>
                     </form>
                   </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-rose-900">
-                      {r.name}
-                    </p>
-                    <p className="text-xs text-rose-700/60">
-                      {TIME_LABELS[r.time_of_day]} ·{" "}
-                      {r.is_occasional
-                        ? "Ocasional"
-                        : r.weekdays.length === 7
-                          ? "Todos los días"
-                          : r.weekdays
-                              .slice()
-                              .sort((a, b) => a - b)
-                              .map((d) => WEEKDAY_SHORT[d])
-                              .join(" ") || "Sin días"}
-                    </p>
+                  <div className="flex-1">
+                    <RoutineEditor routine={r} />
                   </div>
-                  <form action={deleteRoutine}>
-                    <input type="hidden" name="id" value={r.id} />
-                    <button
-                      type="submit"
-                      className="shrink-0 text-xs text-rose-400 hover:text-rose-600 hover:underline"
-                    >
-                      Quitar
-                    </button>
-                  </form>
                 </li>
               ))}
             </ul>

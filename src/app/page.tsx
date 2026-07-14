@@ -34,7 +34,7 @@ export default async function Inicio() {
     },
     {
       href: "/rutinas",
-      emoji: "🧹",
+      emoji: "💪",
       title: "Súper adulta",
       desc: "Tus rutinas por día y el checklist de hoy: limpiar, cocinar, paseo de Lily…",
     },

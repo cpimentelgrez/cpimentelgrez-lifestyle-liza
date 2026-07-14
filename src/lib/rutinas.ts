@@ -9,7 +9,21 @@ export type Routine = {
   weekdays: number[]; // 1 = Lunes ... 7 = Domingo
   is_occasional: boolean;
   sort: number;
+  subtasks: string[];
 };
+
+// Subtareas sugeridas para tareas de limpieza.
+export const CLEANING_SUBTASKS = [
+  "Cocina",
+  "Baño",
+  "Dormitorio",
+  "Living",
+  "Aspirar",
+  "Trapear",
+  "Ordenar",
+  "Ventanas",
+  "Basura",
+];
 
 export const TIME_LABELS: Record<TimeOfDay, string> = {
   manana: "🌅 Mañana",
@@ -47,17 +61,18 @@ export const DEFAULT_ROUTINES: {
   time_of_day: TimeOfDay;
   weekdays: number[];
   is_occasional: boolean;
+  subtasks: string[];
 }[] = [
-  { name: "Paseo de Lily", time_of_day: "manana", weekdays: [1, 2, 3, 4, 5, 6, 7], is_occasional: false },
-  { name: "Cocinar", time_of_day: "tarde", weekdays: [1, 2, 3, 4, 5, 6, 7], is_occasional: false },
-  { name: "Limpiar", time_of_day: "manana", weekdays: [1, 3, 5], is_occasional: false },
-  { name: "Gimnasio", time_of_day: "manana", weekdays: [1, 3, 5], is_occasional: false },
-  { name: "Lavar ropa", time_of_day: "manana", weekdays: [6], is_occasional: false },
-  { name: "Preparar maletas", time_of_day: "manana", weekdays: [], is_occasional: true },
-  { name: "Guardar maletas", time_of_day: "manana", weekdays: [], is_occasional: true },
-  { name: "Comprar pasajes", time_of_day: "tarde", weekdays: [], is_occasional: true },
-  { name: "Supermercado", time_of_day: "tarde", weekdays: [], is_occasional: true },
-  { name: "Pagar cuentas", time_of_day: "tarde", weekdays: [], is_occasional: true },
+  { name: "Paseo de Lily", time_of_day: "manana", weekdays: [1, 2, 3, 4, 5, 6, 7], is_occasional: false, subtasks: [] },
+  { name: "Cocinar", time_of_day: "tarde", weekdays: [1, 2, 3, 4, 5, 6, 7], is_occasional: false, subtasks: [] },
+  { name: "Limpiar", time_of_day: "manana", weekdays: [1, 3, 5], is_occasional: false, subtasks: ["Cocina", "Baño", "Dormitorio", "Aspirar"] },
+  { name: "Gimnasio", time_of_day: "manana", weekdays: [1, 3, 5], is_occasional: false, subtasks: [] },
+  { name: "Lavar ropa", time_of_day: "manana", weekdays: [6], is_occasional: false, subtasks: [] },
+  { name: "Preparar maletas", time_of_day: "manana", weekdays: [], is_occasional: true, subtasks: [] },
+  { name: "Guardar maletas", time_of_day: "manana", weekdays: [], is_occasional: true, subtasks: [] },
+  { name: "Comprar pasajes", time_of_day: "tarde", weekdays: [], is_occasional: true, subtasks: [] },
+  { name: "Supermercado", time_of_day: "tarde", weekdays: [], is_occasional: true, subtasks: [] },
+  { name: "Pagar cuentas", time_of_day: "tarde", weekdays: [], is_occasional: true, subtasks: [] },
 ];
 
 // Día de la semana ISO (1=Lunes..7=Domingo) a partir de un Date.
