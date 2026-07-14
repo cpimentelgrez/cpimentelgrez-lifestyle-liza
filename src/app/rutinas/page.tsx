@@ -174,6 +174,12 @@ export default async function RutinasPage() {
             </p>
           ) : (
             <div className="mt-5 space-y-5">
+              {todaysList.length === 0 && (
+                <p className="text-sm text-rose-700/60">
+                  Hoy no tienes rutinas fijas. 🌸
+                </p>
+              )}
+
               {TIME_ORDER.map((t) =>
                 todaysByTime[t].length > 0 ? (
                   <div key={t}>
@@ -187,13 +193,19 @@ export default async function RutinasPage() {
                 ) : null,
               )}
 
+              {/* Ocasionales: ocultas por defecto, se abren solo si se necesitan. */}
               {occasional.length > 0 && (
-                <div>
-                  <p className="mb-2 text-sm font-semibold text-rose-800">
-                    📦 Ocasionales
-                  </p>
-                  <div className="space-y-2">{occasional.map(renderItem)}</div>
-                </div>
+                <details className="rounded-lg border border-rose-100 bg-rose-50/50 px-3 py-2">
+                  <summary className="cursor-pointer select-none text-sm font-semibold text-rose-800">
+                    📦 Ocasionales{" "}
+                    <span className="text-xs font-normal text-rose-700/50">
+                      (tocar si hoy toca alguna)
+                    </span>
+                  </summary>
+                  <div className="mt-3 space-y-2">
+                    {occasional.map(renderItem)}
+                  </div>
+                </details>
               )}
             </div>
           )}
