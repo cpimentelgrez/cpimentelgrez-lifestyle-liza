@@ -67,22 +67,22 @@ export default async function Inicio() {
 
       <main className="mx-auto max-w-2xl px-4 py-8">
         {/* Bienvenida */}
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-rose-100">
-          <div className="relative h-40 w-full bg-rose-100 sm:h-52">
+        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-rose-100 sm:grid sm:grid-cols-2">
+          <div className="relative h-72 w-full bg-rose-100 sm:h-full sm:min-h-[300px]">
             <Image
               src="/portada.jpg"
               alt="Portada"
               fill
               priority
-              sizes="(max-width: 672px) 100vw, 672px"
+              sizes="(max-width: 640px) 100vw, 336px"
               className="object-cover object-center"
             />
           </div>
-          <div className="p-6">
-            <h2 className="text-xl font-semibold text-rose-900">
+          <div className="flex flex-col justify-center p-6">
+            <h2 className="text-2xl font-semibold text-rose-900">
               ¡Hola de nuevo! 🌷
             </h2>
-            <p className="mt-1 text-sm text-rose-700/70">
+            <p className="mt-2 text-sm text-rose-700/70">
               ¿Qué quieres hacer hoy? Elige una sección para empezar.
             </p>
           </div>

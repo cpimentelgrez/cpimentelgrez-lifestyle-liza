@@ -19,9 +19,11 @@ export default function RoutineEditor({ routine }: { routine: Routine }) {
   const [pending, startTransition] = useTransition();
   const [newSub, setNewSub] = useState("");
 
-  const suggestions = CLEANING_SUBTASKS.filter(
-    (s) => !routine.subtasks.includes(s),
-  );
+  // Las sugerencias de limpieza solo aparecen en tareas de limpieza.
+  const isCleaning = /limpi|aseo|limpieza/i.test(routine.name);
+  const suggestions = isCleaning
+    ? CLEANING_SUBTASKS.filter((s) => !routine.subtasks.includes(s))
+    : [];
 
   return (
     <div
