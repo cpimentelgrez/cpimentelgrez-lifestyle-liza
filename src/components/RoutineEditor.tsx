@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import {
   toggleRoutineDay,
   setRoutineTime,
+  renameRoutine,
   addSubtask,
   removeSubtask,
   deleteRoutine,
@@ -18,6 +19,7 @@ import {
 export default function RoutineEditor({ routine }: { routine: Routine }) {
   const [pending, startTransition] = useTransition();
   const [newSub, setNewSub] = useState("");
+  const [name, setName] = useState(routine.name);
 
   // Las sugerencias de limpieza solo aparecen en tareas de limpieza.
   // Se usa \baseo\b para no confundir "paseo" con "aseo".
@@ -31,7 +33,21 @@ export default function RoutineEditor({ routine }: { routine: Routine }) {
       className={`rounded-xl border border-rose-100 p-3 ${pending ? "opacity-60" : ""}`}
     >
       <div className="flex items-start justify-between gap-3">
-        <p className="text-sm font-medium text-rose-900">{routine.name}</p>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={() => {
+            const v = name.trim();
+            if (v && v !== routine.name) {
+              startTransition(() => renameRoutine(routine.id, v));
+            } else if (!v) {
+              setName(routine.name);
+            }
+          }}
+          aria-label="Nombre de la tarea"
+          className="min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-1 py-0.5 text-sm font-medium text-rose-900 outline-none hover:border-rose-200 focus:border-rose-400 focus:bg-white"
+        />
         <form action={deleteRoutine}>
           <input type="hidden" name="id" value={routine.id} />
           <button

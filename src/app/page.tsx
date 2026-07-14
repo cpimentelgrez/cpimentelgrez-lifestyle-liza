@@ -38,6 +38,12 @@ export default async function Inicio() {
       title: "Súper adulta",
       desc: "Tus rutinas por día y el checklist de hoy: limpiar, cocinar, paseo de Lily…",
     },
+    {
+      href: "/evolucion",
+      emoji: "📈",
+      title: "Evolución",
+      desc: "Cómo han ido tu ánimo, energía y ansiedad estos días, con tu racha.",
+    },
   ];
 
   if (admin) {

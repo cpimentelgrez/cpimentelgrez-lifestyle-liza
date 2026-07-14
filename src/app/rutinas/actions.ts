@@ -124,6 +124,21 @@ export async function toggleRoutineDay(routineId: string, weekday: number) {
   revalidatePath("/rutinas");
 }
 
+// Cambia el nombre de una rutina.
+export async function renameRoutine(routineId: string, name: string) {
+  const { supabase, user } = await requireUser();
+  const clean = name.trim();
+  if (!clean) return;
+
+  await supabase
+    .from("routines")
+    .update({ name: clean })
+    .eq("id", routineId)
+    .eq("user_id", user.id);
+
+  revalidatePath("/rutinas");
+}
+
 // Cambia el rango horario de una rutina.
 export async function setRoutineTime(routineId: string, time: TimeOfDay) {
   const { supabase, user } = await requireUser();
