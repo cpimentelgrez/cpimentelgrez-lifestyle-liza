@@ -1,0 +1,102 @@
+"use client";
+
+import { useState } from "react";
+import { addRoutine } from "@/app/rutinas/actions";
+import { WEEKDAY_SHORT } from "@/lib/rutinas";
+
+// Formulario para añadir una rutina (fija con días, u ocasional).
+export default function AddRoutineForm() {
+  const [occasional, setOccasional] = useState(false);
+  const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]);
+
+  function toggleDay(d: number) {
+    setDays((prev) =>
+      prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d].sort(),
+    );
+  }
+
+  return (
+    <form action={addRoutine} className="space-y-4">
+      <div>
+        <label htmlFor="name" className="block text-sm font-medium text-rose-900">
+          Nueva tarea
+        </label>
+        <input
+          id="name"
+          name="name"
+          type="text"
+          required
+          placeholder="Ej. Limpiar, Paseo de Lily, Supermercado…"
+          className="mt-1 w-full rounded-lg border border-rose-200 px-3 py-2 text-rose-900 outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-200"
+        />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-4">
+        <div>
+          <label
+            htmlFor="time_of_day"
+            className="block text-xs font-medium text-rose-700/70"
+          >
+            Rango del día
+          </label>
+          <select
+            id="time_of_day"
+            name="time_of_day"
+            className="mt-1 rounded-lg border border-rose-200 px-3 py-2 text-sm text-rose-900 outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-200"
+          >
+            <option value="manana">🌅 Mañana</option>
+            <option value="tarde">☀️ Tarde</option>
+            <option value="noche">🌙 Noche</option>
+          </select>
+        </div>
+
+        <label className="flex items-center gap-2 self-end pb-2 text-sm text-rose-900">
+          <input
+            type="checkbox"
+            name="is_occasional"
+            checked={occasional}
+            onChange={(e) => setOccasional(e.target.checked)}
+            className="h-4 w-4 rounded border-rose-300 text-rose-500 focus:ring-rose-400"
+          />
+          Es ocasional (sin días fijos)
+        </label>
+      </div>
+
+      {!occasional && (
+        <div>
+          <p className="text-xs font-medium text-rose-700/70">¿Qué días?</p>
+          <div className="mt-2 flex gap-1.5">
+            {[1, 2, 3, 4, 5, 6, 7].map((d) => {
+              const active = days.includes(d);
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => toggleDay(d)}
+                  className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition ${
+                    active
+                      ? "border-rose-500 bg-rose-500 text-white"
+                      : "border-rose-200 bg-white text-rose-700 hover:border-rose-400"
+                  }`}
+                >
+                  {WEEKDAY_SHORT[d]}
+                </button>
+              );
+            })}
+          </div>
+          {/* Los días seleccionados se envían como varios inputs weekdays. */}
+          {days.map((d) => (
+            <input key={d} type="hidden" name="weekdays" value={d} />
+          ))}
+        </div>
+      )}
+
+      <button
+        type="submit"
+        className="rounded-lg bg-rose-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-rose-600"
+      >
+        Añadir tarea
+      </button>
+    </form>
+  );
+}

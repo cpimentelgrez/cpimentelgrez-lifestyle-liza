@@ -59,6 +59,12 @@ export default async function Home({
             <p className="text-xs text-rose-700/60">{user.email}</p>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href="/rutinas"
+              className="rounded-lg bg-rose-100 px-3 py-1.5 text-sm font-medium text-rose-700 transition hover:bg-rose-200"
+            >
+              🧹 Súper adulta
+            </Link>
             {admin && (
               <Link
                 href="/admin"
