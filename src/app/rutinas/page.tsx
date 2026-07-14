@@ -2,12 +2,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "../login/actions";
-import { deleteRoutine } from "./actions";
+import { deleteRoutine, moveRoutine } from "./actions";
 import CompletionToggle from "@/components/CompletionToggle";
 import AddRoutineForm from "@/components/AddRoutineForm";
 import {
   type Routine,
   type TimeOfDay,
+  DEFAULT_ROUTINES,
   TIME_LABELS,
   TIME_ORDER,
   WEEKDAY_SHORT,
@@ -15,6 +16,8 @@ import {
   isoWeekday,
   todayStr,
 } from "@/lib/rutinas";
+
+const ROUTINE_SELECT = "id, name, time_of_day, weekdays, is_occasional, sort";
 
 export default async function RutinasPage() {
   const supabase = await createClient();
@@ -29,12 +32,33 @@ export default async function RutinasPage() {
 
   const { data: routinesData } = await supabase
     .from("routines")
-    .select("id, name, time_of_day, weekdays, is_occasional, sort")
+    .select(ROUTINE_SELECT)
     .eq("user_id", user.id)
     .order("sort", { ascending: true })
     .order("created_at", { ascending: true });
 
-  const routines = (routinesData as Routine[]) ?? [];
+  let routines = (routinesData as Routine[]) ?? [];
+
+  // La primera vez (sin ninguna tarea) se cargan las tareas sugeridas.
+  if (routines.length === 0) {
+    await supabase.from("routines").insert(
+      DEFAULT_ROUTINES.map((r, i) => ({
+        user_id: user.id,
+        name: r.name,
+        time_of_day: r.time_of_day,
+        weekdays: r.weekdays,
+        is_occasional: r.is_occasional,
+        sort: i,
+      })),
+    );
+    const { data } = await supabase
+      .from("routines")
+      .select(ROUTINE_SELECT)
+      .eq("user_id", user.id)
+      .order("sort", { ascending: true })
+      .order("created_at", { ascending: true });
+    routines = (data as Routine[]) ?? [];
+  }
 
   const { data: completionsData } = await supabase
     .from("routine_completions")
@@ -162,12 +186,40 @@ export default async function RutinasPage() {
 
           {routines.length > 0 && (
             <ul className="mt-4 space-y-2">
-              {routines.map((r) => (
+              {routines.map((r, index) => (
                 <li
                   key={r.id}
                   className="flex items-center justify-between gap-3 rounded-lg border border-rose-100 px-3 py-2"
                 >
-                  <div className="min-w-0">
+                  {/* Botones de ordenar */}
+                  <div className="flex flex-col">
+                    <form action={moveRoutine}>
+                      <input type="hidden" name="id" value={r.id} />
+                      <input type="hidden" name="dir" value="up" />
+                      <button
+                        type="submit"
+                        disabled={index === 0}
+                        aria-label="Subir"
+                        className="flex h-5 w-5 items-center justify-center text-rose-400 transition hover:text-rose-600 disabled:opacity-25"
+                      >
+                        ▲
+                      </button>
+                    </form>
+                    <form action={moveRoutine}>
+                      <input type="hidden" name="id" value={r.id} />
+                      <input type="hidden" name="dir" value="down" />
+                      <button
+                        type="submit"
+                        disabled={index === routines.length - 1}
+                        aria-label="Bajar"
+                        className="flex h-5 w-5 items-center justify-center text-rose-400 transition hover:text-rose-600 disabled:opacity-25"
+                      >
+                        ▼
+                      </button>
+                    </form>
+                  </div>
+
+                  <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-rose-900">
                       {r.name}
                     </p>

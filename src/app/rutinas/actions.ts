@@ -50,6 +50,43 @@ export async function addRoutine(formData: FormData) {
   redirect("/rutinas");
 }
 
+// Sube o baja una rutina en el orden (columna sort).
+export async function moveRoutine(formData: FormData) {
+  const { supabase, user } = await requireUser();
+
+  const id = String(formData.get("id") ?? "");
+  const dir = String(formData.get("dir") ?? "");
+  if (!id || (dir !== "up" && dir !== "down")) redirect("/rutinas");
+
+  const { data } = await supabase
+    .from("routines")
+    .select("id")
+    .eq("user_id", user.id)
+    .order("sort", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  const list = (data ?? []) as { id: string }[];
+  const i = list.findIndex((r) => r.id === id);
+  const j = dir === "up" ? i - 1 : i + 1;
+
+  // Si es válido, intercambia posiciones y reescribe el orden.
+  if (i !== -1 && j >= 0 && j < list.length) {
+    [list[i], list[j]] = [list[j], list[i]];
+    await Promise.all(
+      list.map((r, idx) =>
+        supabase
+          .from("routines")
+          .update({ sort: idx })
+          .eq("id", r.id)
+          .eq("user_id", user.id),
+      ),
+    );
+  }
+
+  revalidatePath("/rutinas");
+  redirect("/rutinas");
+}
+
 export async function deleteRoutine(formData: FormData) {
   const { supabase, user } = await requireUser();
 

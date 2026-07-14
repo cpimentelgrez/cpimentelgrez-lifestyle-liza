@@ -40,6 +40,25 @@ export const WEEKDAY_LONG: Record<number, string> = {
   7: "Domingo",
 };
 
+// Tareas que se crean automáticamente la primera vez que se entra al módulo.
+// La usuaria puede editar días, reordenar o borrar después.
+export const DEFAULT_ROUTINES: {
+  name: string;
+  time_of_day: TimeOfDay;
+  weekdays: number[];
+  is_occasional: boolean;
+}[] = [
+  { name: "Paseo de Lily", time_of_day: "manana", weekdays: [1, 2, 3, 4, 5, 6, 7], is_occasional: false },
+  { name: "Cocinar", time_of_day: "tarde", weekdays: [1, 2, 3, 4, 5, 6, 7], is_occasional: false },
+  { name: "Limpiar", time_of_day: "manana", weekdays: [1, 3, 5], is_occasional: false },
+  { name: "Lavar ropa", time_of_day: "manana", weekdays: [6], is_occasional: false },
+  { name: "Preparar maletas", time_of_day: "manana", weekdays: [], is_occasional: true },
+  { name: "Guardar maletas", time_of_day: "manana", weekdays: [], is_occasional: true },
+  { name: "Comprar pasajes", time_of_day: "tarde", weekdays: [], is_occasional: true },
+  { name: "Supermercado", time_of_day: "tarde", weekdays: [], is_occasional: true },
+  { name: "Pagar cuentas", time_of_day: "tarde", weekdays: [], is_occasional: true },
+];
+
 // Día de la semana ISO (1=Lunes..7=Domingo) a partir de un Date.
 export function isoWeekday(date: Date): number {
   return ((date.getDay() + 6) % 7) + 1;
