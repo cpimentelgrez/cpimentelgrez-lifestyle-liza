@@ -1,4 +1,4 @@
-import type { UsageRow } from "@/lib/admin";
+import { type UsageRow, daysSinceLastLog, needsAttention } from "@/lib/admin";
 
 // Barra de "uso" de un área: muestra cuántos días se ha rellenado (no el contenido).
 function AreaBar({
@@ -60,8 +60,15 @@ export default function UsageCard({ row }: { row: UsageRow }) {
   const statusText =
     recent >= 4 ? "Activa" : recent >= 1 ? "Poca actividad" : "Inactiva";
 
+  const care = needsAttention(row);
+  const dSince = daysSinceLastLog(row);
+
   return (
-    <li className="rounded-2xl bg-white p-5 ring-1 ring-rose-100">
+    <li
+      className={`rounded-2xl bg-white p-5 ring-1 ${
+        care ? "ring-rose-300" : "ring-rose-100"
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate font-medium text-rose-900">{row.email}</p>
@@ -76,6 +83,15 @@ export default function UsageCard({ row }: { row: UsageRow }) {
         </span>
       </div>
 
+      {care && (
+        <div className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700 ring-1 ring-rose-200">
+          💗 Necesita cariño ·{" "}
+          {dSince === null
+            ? "aún no ha registrado nada"
+            : `sin registrar hace ${dSince} días`}
+        </div>
+      )}
+
       <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-3">
         <AreaBar label="Ánimo" emoji="😊" count={row.mood_count} total={total} />
         <AreaBar label="Energía" emoji="⚡" count={row.energy_count} total={total} />
@@ -84,6 +100,18 @@ export default function UsageCard({ row }: { row: UsageRow }) {
         <AreaBar label="Medicación" emoji="💊" count={row.medication_count} total={total} />
         <AreaBar label="Tareas" emoji="✅" count={row.tasks_count} total={total} />
       </div>
+
+      {row.routines_active > 0 && (
+        <div className="mt-3 flex items-center gap-2 rounded-lg bg-rose-50/70 px-3 py-2 text-xs text-rose-800">
+          <span>💪 Rutinas</span>
+          <span className="font-semibold">
+            {row.routines_done_7} completadas
+          </span>
+          <span className="text-rose-700/50">
+            (últimos 7 días · {row.routines_active} rutinas activas)
+          </span>
+        </div>
+      )}
 
       <p className="mt-3 text-[11px] text-rose-700/40">
         Últimos 7 días: {recent} de 7 · Solo se muestra el uso, no el contenido.

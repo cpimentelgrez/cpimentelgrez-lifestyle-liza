@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { isCurrentUserAdmin, type UsageRow } from "@/lib/admin";
+import { isCurrentUserAdmin, needsAttention, type UsageRow } from "@/lib/admin";
 import { logout } from "../login/actions";
 import UsageCard from "@/components/UsageCard";
 
@@ -27,6 +27,12 @@ export default async function AdminPage() {
 
   const activas = rows.filter((r) => r.days_last_7 > 0).length;
   const totalCuentas = rows.length;
+  const cuido = rows.filter(needsAttention).length;
+
+  // Las que necesitan cariño se muestran primero.
+  const ordered = [...rows].sort(
+    (a, b) => Number(needsAttention(b)) - Number(needsAttention(a)),
+  );
 
   return (
     <div className="min-h-full bg-rose-50">
@@ -72,6 +78,10 @@ export default async function AdminPage() {
               <p className="text-2xl font-semibold text-rose-900">{activas}</p>
               <p className="text-xs text-rose-700/60">Activas (últimos 7 días)</p>
             </div>
+            <div>
+              <p className="text-2xl font-semibold text-rose-900">💗 {cuido}</p>
+              <p className="text-xs text-rose-700/60">Necesitan cariño</p>
+            </div>
           </div>
         </div>
 
@@ -88,7 +98,7 @@ export default async function AdminPage() {
           </p>
         ) : (
           <ul className="space-y-4">
-            {rows.map((row) => (
+            {ordered.map((row) => (
               <UsageCard key={row.user_id} row={row} />
             ))}
           </ul>

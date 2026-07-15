@@ -22,4 +22,27 @@ export type UsageRow = {
   anxiety_count: number;
   medication_count: number;
   tasks_count: number;
+  routines_active: number;
+  routines_done_7: number;
 };
+
+// Días desde el último registro (null si nunca registró).
+export function daysSinceLastLog(row: UsageRow): number | null {
+  if (!row.last_log_date) return null;
+  const last = new Date(row.last_log_date + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((today.getTime() - last.getTime()) / 86400000);
+}
+
+// ¿Conviene "acompañar" a esta cuenta? (inactividad, sin revelar contenido)
+export function needsAttention(row: UsageRow): boolean {
+  const d = daysSinceLastLog(row);
+  if (d === null) {
+    // Nunca ha registrado y su cuenta ya tiene algunos días.
+    const created = new Date(row.signed_up);
+    const ageDays = (Date.now() - created.getTime()) / 86400000;
+    return ageDays >= 3;
+  }
+  return d >= 3;
+}
