@@ -14,11 +14,14 @@ const SUGGESTIONS = [
   "Pagar cuentas",
 ];
 
+type ScheduleKind = "none" | "date" | "monthly";
+
 // Formulario para añadir una rutina (fija con días, u ocasional).
 export default function AddRoutineForm() {
   const [occasional, setOccasional] = useState(false);
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [name, setName] = useState("");
+  const [scheduleKind, setScheduleKind] = useState<ScheduleKind>("none");
 
   function toggleDay(d: number) {
     setDays((prev) =>
@@ -106,7 +109,7 @@ export default function AddRoutineForm() {
         </label>
       </div>
 
-      {!occasional && (
+      {!occasional ? (
         <div>
           <p className="text-xs font-medium text-rose-700/70">¿Qué días?</p>
           <div className="mt-2 flex gap-1.5">
@@ -132,6 +135,79 @@ export default function AddRoutineForm() {
           {days.map((d) => (
             <input key={d} type="hidden" name="weekdays" value={d} />
           ))}
+        </div>
+      ) : (
+        <div className="rounded-lg bg-amber-50/60 p-3">
+          <p className="text-xs font-medium text-amber-800">¿Cuándo toca?</p>
+          <div className="mt-2 flex flex-wrap gap-3 text-sm text-amber-900">
+            <label className="flex items-center gap-1.5">
+              <input
+                type="radio"
+                name="schedule_kind"
+                value="none"
+                checked={scheduleKind === "none"}
+                onChange={() => setScheduleKind("none")}
+                className="text-amber-600 focus:ring-amber-400"
+              />
+              Sin fecha fija
+            </label>
+            <label className="flex items-center gap-1.5">
+              <input
+                type="radio"
+                name="schedule_kind"
+                value="date"
+                checked={scheduleKind === "date"}
+                onChange={() => setScheduleKind("date")}
+                className="text-amber-600 focus:ring-amber-400"
+              />
+              Fecha específica
+            </label>
+            <label className="flex items-center gap-1.5">
+              <input
+                type="radio"
+                name="schedule_kind"
+                value="monthly"
+                checked={scheduleKind === "monthly"}
+                onChange={() => setScheduleKind("monthly")}
+                className="text-amber-600 focus:ring-amber-400"
+              />
+              Cada mes
+            </label>
+          </div>
+
+          {scheduleKind === "date" && (
+            <input
+              type="date"
+              name="scheduled_date"
+              required
+              className="mt-2 rounded-lg border border-amber-200 px-3 py-2 text-sm text-amber-900 outline-none focus:border-amber-400"
+            />
+          )}
+          {scheduleKind === "monthly" && (
+            <div className="mt-2 flex items-center gap-2 text-sm text-amber-900">
+              <span>El día</span>
+              <input
+                type="number"
+                name="monthly_day"
+                min={1}
+                max={31}
+                required
+                placeholder="5"
+                className="w-16 rounded-lg border border-amber-200 px-2 py-2 text-center outline-none focus:border-amber-400"
+              />
+              <span>de cada mes</span>
+            </div>
+          )}
+          {scheduleKind === "none" && (
+            <p className="mt-2 text-xs text-amber-700/70">
+              Aparecerá como chip para marcar cuando la necesites (ej. supermercado).
+            </p>
+          )}
+          {scheduleKind !== "none" && (
+            <p className="mt-2 text-xs text-amber-700/70">
+              Se avisa un día antes y ese día se suma a las tareas pendientes. 🔔
+            </p>
+          )}
         </div>
       )}
 

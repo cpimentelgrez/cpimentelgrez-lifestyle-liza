@@ -5,6 +5,7 @@ import {
   toggleRoutineDay,
   setRoutineTime,
   setRoutineCategory,
+  setOccasionalSchedule,
   renameRoutine,
   addSubtask,
   removeSubtask,
@@ -18,10 +19,25 @@ import {
   WEEKDAY_SHORT,
 } from "@/lib/rutinas";
 
+type ScheduleKind = "none" | "date" | "monthly";
+
+function initialScheduleKind(routine: Routine): ScheduleKind {
+  if (routine.scheduled_date) return "date";
+  if (routine.monthly_day) return "monthly";
+  return "none";
+}
+
 export default function RoutineEditor({ routine }: { routine: Routine }) {
   const [pending, startTransition] = useTransition();
   const [newSub, setNewSub] = useState("");
   const [name, setName] = useState(routine.name);
+  const [scheduleKind, setScheduleKind] = useState<ScheduleKind>(
+    initialScheduleKind(routine),
+  );
+  const [scheduledDate, setScheduledDate] = useState(routine.scheduled_date ?? "");
+  const [monthlyDay, setMonthlyDay] = useState(
+    routine.monthly_day ? String(routine.monthly_day) : "",
+  );
 
   // Las sugerencias de limpieza solo aparecen en tareas de limpieza.
   // Se usa \baseo\b para no confundir "paseo" con "aseo".
@@ -125,7 +141,64 @@ export default function RoutineEditor({ routine }: { routine: Routine }) {
           </div>
         </div>
       ) : (
-        <p className="mt-2 text-xs text-rose-700/50">Ocasional (sin días fijos)</p>
+        <div className="mt-2 rounded-lg bg-amber-50/60 p-2.5">
+          <span className="text-xs text-amber-700/70">¿Cuándo toca?</span>
+          <div className="mt-1.5 flex flex-wrap gap-3 text-xs text-amber-900">
+            {(["none", "date", "monthly"] as ScheduleKind[]).map((k) => (
+              <label key={k} className="flex items-center gap-1">
+                <input
+                  type="radio"
+                  checked={scheduleKind === k}
+                  onChange={() => {
+                    setScheduleKind(k);
+                    startTransition(() =>
+                      setOccasionalSchedule(
+                        routine.id,
+                        k,
+                        k === "date" ? scheduledDate : k === "monthly" ? monthlyDay : "",
+                      ),
+                    );
+                  }}
+                  className="text-amber-600 focus:ring-amber-400"
+                />
+                {k === "none" ? "Sin fecha" : k === "date" ? "Fecha" : "Cada mes"}
+              </label>
+            ))}
+          </div>
+
+          {scheduleKind === "date" && (
+            <input
+              type="date"
+              value={scheduledDate}
+              onChange={(e) => {
+                setScheduledDate(e.target.value);
+                startTransition(() =>
+                  setOccasionalSchedule(routine.id, "date", e.target.value),
+                );
+              }}
+              className="mt-1.5 rounded-md border border-amber-200 px-2 py-1 text-xs text-amber-900 outline-none focus:border-amber-400"
+            />
+          )}
+          {scheduleKind === "monthly" && (
+            <div className="mt-1.5 flex items-center gap-1.5 text-xs text-amber-900">
+              <span>Día</span>
+              <input
+                type="number"
+                min={1}
+                max={31}
+                value={monthlyDay}
+                onChange={(e) => {
+                  setMonthlyDay(e.target.value);
+                  startTransition(() =>
+                    setOccasionalSchedule(routine.id, "monthly", e.target.value),
+                  );
+                }}
+                className="w-14 rounded-md border border-amber-200 px-1.5 py-1 text-center outline-none focus:border-amber-400"
+              />
+              <span>de cada mes</span>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Subtareas */}

@@ -23,11 +23,14 @@ import {
   WEEKDAY_LONG,
   isoWeekday,
   isRoutineDone,
+  occasionalDueOn,
+  hasSchedule,
+  addDays,
   todayStr,
 } from "@/lib/rutinas";
 
 const ROUTINE_SELECT =
-  "id, name, time_of_day, weekdays, is_occasional, sort, subtasks, category";
+  "id, name, time_of_day, weekdays, is_occasional, sort, subtasks, category, scheduled_date, monthly_day";
 
 export default async function RutinasPage() {
   const supabase = await createClient();
@@ -61,6 +64,8 @@ export default async function RutinasPage() {
         is_occasional: r.is_occasional,
         subtasks: r.subtasks,
         category: r.category,
+        scheduled_date: r.scheduled_date,
+        monthly_day: r.monthly_day,
         sort: i,
       })),
     );
@@ -95,10 +100,25 @@ export default async function RutinasPage() {
 
   const fixed = routines.filter((r) => !r.is_occasional);
   const occasional = routines.filter((r) => r.is_occasional);
-  const occasionalChips = occasional.filter((r) => r.subtasks.length === 0);
-  const occasionalWithSubtasks = occasional.filter((r) => r.subtasks.length > 0);
+
+  const tomorrow = addDays(today, 1);
+  // Ocasionales programados (fecha o mensual) que tocan hoy: se incorporan
+  // al checklist normal y cuentan como pendientes del día.
+  const occasionalDueToday = occasional.filter(
+    (r) => hasSchedule(r) && occasionalDueOn(r, today),
+  );
+  // Recordatorio: programados que tocan mañana (aviso, no se marcan hoy).
+  const occasionalReminder = occasional.filter(
+    (r) => hasSchedule(r) && occasionalDueOn(r, tomorrow),
+  );
+  // Ocasionales sin fecha: quedan como chips manuales de "cuando toque".
+  const occasionalFreeform = occasional.filter((r) => !hasSchedule(r));
+  const occasionalChips = occasionalFreeform.filter((r) => r.subtasks.length === 0);
+  const occasionalWithSubtasks = occasionalFreeform.filter((r) => r.subtasks.length > 0);
+  const dueTodayIds = new Set(occasionalDueToday.map((r) => r.id));
 
   // Rutinas de hoy (según el día de la semana), agrupadas por rango horario.
+  // Se suman los ocasionales programados que tocan hoy.
   const todaysByTime: Record<TimeOfDay, Routine[]> = {
     manana: [],
     tarde: [],
@@ -106,6 +126,9 @@ export default async function RutinasPage() {
   };
   for (const r of fixed) {
     if (r.weekdays.includes(weekday)) todaysByTime[r.time_of_day].push(r);
+  }
+  for (const r of occasionalDueToday) {
+    todaysByTime[r.time_of_day].push(r);
   }
 
   const todaysList = TIME_ORDER.flatMap((t) => todaysByTime[t]);
@@ -207,18 +230,30 @@ export default async function RutinasPage() {
                   <p className="mb-2 text-sm font-semibold text-rose-800">
                     {TIME_LABELS[t]}
                   </p>
-                  <div className="space-y-2">{todaysByTime[t].map((r) => renderItem(r))}</div>
+                  <div className="space-y-2">
+                    {todaysByTime[t].map((r) => renderItem(r, dueTodayIds.has(r.id)))}
+                  </div>
                 </div>
               ) : null,
             )}
           </div>
         )}
 
-        {/* Ocasionales: chips rápidos, en color ámbar, dentro de la misma vista de hoy. */}
-        {occasional.length > 0 && (
+        {/* Recordatorio: ocasionales programados que tocan mañana. */}
+        {occasionalReminder.length > 0 && (
+          <div className="mt-6 rounded-lg bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+            🔔 Mañana toca:{" "}
+            <span className="font-medium">
+              {occasionalReminder.map((r) => r.name).join(", ")}
+            </span>
+          </div>
+        )}
+
+        {/* Ocasionales sin fecha: chips rápidos, en color ámbar, para cuando toquen. */}
+        {occasionalFreeform.length > 0 && (
           <div className="mt-6 border-t border-rose-100 pt-5">
             <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-amber-800">
-              📦 Ocasionales de hoy
+              📦 Ocasionales
             </p>
             {occasionalChips.length > 0 && (
               <div className="flex flex-wrap gap-2">

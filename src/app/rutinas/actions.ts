@@ -31,6 +31,26 @@ function parseWeekdays(formData: FormData): number[] {
     .filter((n) => n >= 1 && n <= 7);
 }
 
+// Programación de un ocasional: sin fecha, fecha única, o día del mes.
+function parseSchedule(formData: FormData): {
+  scheduled_date: string | null;
+  monthly_day: number | null;
+} {
+  const kind = String(formData.get("schedule_kind") ?? "none");
+  if (kind === "date") {
+    const date = String(formData.get("scheduled_date") ?? "").trim();
+    return { scheduled_date: date || null, monthly_day: null };
+  }
+  if (kind === "monthly") {
+    const day = Number(formData.get("monthly_day"));
+    return {
+      scheduled_date: null,
+      monthly_day: day >= 1 && day <= 31 ? day : null,
+    };
+  }
+  return { scheduled_date: null, monthly_day: null };
+}
+
 export async function addRoutine(formData: FormData) {
   const { supabase, user } = await requireUser();
 
@@ -39,6 +59,9 @@ export async function addRoutine(formData: FormData) {
 
   const isOccasional = formData.get("is_occasional") === "on";
   const weekdays = isOccasional ? [] : parseWeekdays(formData);
+  const schedule = isOccasional
+    ? parseSchedule(formData)
+    : { scheduled_date: null, monthly_day: null };
 
   const { error } = await supabase.from("routines").insert({
     user_id: user.id,
@@ -47,6 +70,7 @@ export async function addRoutine(formData: FormData) {
     weekdays,
     is_occasional: isOccasional,
     category: parseCategory(formData.get("category")),
+    ...schedule,
   });
 
   if (error) redirect(`/rutinas?error=${encodeURIComponent(error.message)}`);
@@ -182,6 +206,33 @@ export async function setRoutineCategory(routineId: string, category: Category) 
   await supabase
     .from("routines")
     .update({ category: value })
+    .eq("id", routineId)
+    .eq("user_id", user.id);
+
+  revalidatePath("/rutinas");
+}
+
+// Cambia la programación de un ocasional: sin fecha, fecha única o día del mes.
+export async function setOccasionalSchedule(
+  routineId: string,
+  kind: "none" | "date" | "monthly",
+  value: string,
+) {
+  const { supabase, user } = await requireUser();
+
+  let scheduled_date: string | null = null;
+  let monthly_day: number | null = null;
+
+  if (kind === "date") {
+    scheduled_date = value || null;
+  } else if (kind === "monthly") {
+    const day = Number(value);
+    monthly_day = day >= 1 && day <= 31 ? day : null;
+  }
+
+  await supabase
+    .from("routines")
+    .update({ scheduled_date, monthly_day })
     .eq("id", routineId)
     .eq("user_id", user.id);
 

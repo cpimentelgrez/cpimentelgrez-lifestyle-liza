@@ -12,6 +12,8 @@ export type Routine = {
   sort: number;
   subtasks: string[];
   category: Category;
+  scheduled_date: string | null; // "YYYY-MM-DD", fecha única (solo ocasionales)
+  monthly_day: number | null; // 1-31, se repite cada mes (solo ocasionales)
 };
 
 export const CATEGORY_LABELS: Record<Category, string> = {
@@ -72,17 +74,19 @@ export const DEFAULT_ROUTINES: {
   is_occasional: boolean;
   subtasks: string[];
   category: Category;
+  scheduled_date: null;
+  monthly_day: number | null;
 }[] = [
-  { name: "Paseo de Lily", time_of_day: "manana", weekdays: [1, 2, 3, 4, 5, 6, 7], is_occasional: false, subtasks: [], category: "hogar" },
-  { name: "Cocinar", time_of_day: "tarde", weekdays: [1, 2, 3, 4, 5, 6, 7], is_occasional: false, subtasks: [], category: "hogar" },
-  { name: "Limpiar", time_of_day: "manana", weekdays: [1, 3, 5], is_occasional: false, subtasks: ["Cocina", "Baño", "Dormitorio", "Aspirar"], category: "hogar" },
-  { name: "Gimnasio", time_of_day: "manana", weekdays: [1, 3, 5], is_occasional: false, subtasks: [], category: "autocuidado" },
-  { name: "Lavar ropa", time_of_day: "manana", weekdays: [6], is_occasional: false, subtasks: [], category: "hogar" },
-  { name: "Preparar maletas", time_of_day: "manana", weekdays: [], is_occasional: true, subtasks: [], category: "hogar" },
-  { name: "Guardar maletas", time_of_day: "manana", weekdays: [], is_occasional: true, subtasks: [], category: "hogar" },
-  { name: "Comprar pasajes", time_of_day: "tarde", weekdays: [], is_occasional: true, subtasks: [], category: "hogar" },
-  { name: "Supermercado", time_of_day: "tarde", weekdays: [], is_occasional: true, subtasks: [], category: "hogar" },
-  { name: "Pagar cuentas", time_of_day: "tarde", weekdays: [], is_occasional: true, subtasks: [], category: "hogar" },
+  { name: "Paseo de Lily", time_of_day: "manana", weekdays: [1, 2, 3, 4, 5, 6, 7], is_occasional: false, subtasks: [], category: "hogar", scheduled_date: null, monthly_day: null },
+  { name: "Cocinar", time_of_day: "tarde", weekdays: [1, 2, 3, 4, 5, 6, 7], is_occasional: false, subtasks: [], category: "hogar", scheduled_date: null, monthly_day: null },
+  { name: "Limpiar", time_of_day: "manana", weekdays: [1, 3, 5], is_occasional: false, subtasks: ["Cocina", "Baño", "Dormitorio", "Aspirar"], category: "hogar", scheduled_date: null, monthly_day: null },
+  { name: "Gimnasio", time_of_day: "manana", weekdays: [1, 3, 5], is_occasional: false, subtasks: [], category: "autocuidado", scheduled_date: null, monthly_day: null },
+  { name: "Lavar ropa", time_of_day: "manana", weekdays: [6], is_occasional: false, subtasks: [], category: "hogar", scheduled_date: null, monthly_day: null },
+  { name: "Preparar maletas", time_of_day: "manana", weekdays: [], is_occasional: true, subtasks: [], category: "hogar", scheduled_date: null, monthly_day: null },
+  { name: "Guardar maletas", time_of_day: "manana", weekdays: [], is_occasional: true, subtasks: [], category: "hogar", scheduled_date: null, monthly_day: null },
+  { name: "Comprar pasajes", time_of_day: "tarde", weekdays: [], is_occasional: true, subtasks: [], category: "hogar", scheduled_date: null, monthly_day: null },
+  { name: "Supermercado", time_of_day: "tarde", weekdays: [], is_occasional: true, subtasks: [], category: "hogar", scheduled_date: null, monthly_day: null },
+  { name: "Pagar cuentas", time_of_day: "tarde", weekdays: [], is_occasional: true, subtasks: [], category: "hogar", scheduled_date: null, monthly_day: 5 },
 ];
 
 // Día de la semana ISO (1=Lunes..7=Domingo) a partir de un Date.
@@ -101,6 +105,28 @@ export function todayStr(): string {
 export function fmtDate(d: Date): string {
   const off = d.getTimezoneOffset();
   return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
+}
+
+// Suma (o resta) días a una fecha YYYY-MM-DD.
+export function addDays(dateStr: string, delta: number): string {
+  const d = new Date(dateStr + "T00:00:00");
+  d.setDate(d.getDate() + delta);
+  return fmtDate(d);
+}
+
+// ¿Esta rutina ocasional programada (fecha única o día del mes) toca en esa fecha?
+export function occasionalDueOn(routine: Routine, dateStr: string): boolean {
+  if (routine.scheduled_date) return routine.scheduled_date === dateStr;
+  if (routine.monthly_day) {
+    const day = Number(dateStr.slice(8, 10));
+    return day === routine.monthly_day;
+  }
+  return false;
+}
+
+// ¿Tiene esta rutina ocasional una programación (fecha o día del mes)?
+export function hasSchedule(routine: Routine): boolean {
+  return routine.scheduled_date !== null || routine.monthly_day !== null;
 }
 
 // ¿Cuenta esta rutina como "hecha" ese día? Si tiene subtareas, deben
