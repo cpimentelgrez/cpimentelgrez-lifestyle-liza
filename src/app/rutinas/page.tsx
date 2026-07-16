@@ -9,6 +9,7 @@ import SubtaskChecklist from "@/components/SubtaskChecklist";
 import OccasionalChip from "@/components/OccasionalChip";
 import UnpickLink from "@/components/UnpickLink";
 import Collapsible from "@/components/Collapsible";
+import InlineTimeSelect from "@/components/InlineTimeSelect";
 import RoutineEditor from "@/components/RoutineEditor";
 import AddRoutineForm from "@/components/AddRoutineForm";
 import Tabs from "@/components/Tabs";
@@ -292,7 +293,12 @@ export default async function RutinasPage() {
                   <div className="space-y-2">
                     {todaysByTime[t].map((r) => (
                       <div key={r.id}>
-                        {renderItem(r, dueTodayIds.has(r.id))}
+                        <div className="flex items-start gap-2">
+                          <div className="min-w-0 flex-1">
+                            {renderItem(r, dueTodayIds.has(r.id))}
+                          </div>
+                          <InlineTimeSelect routineId={r.id} current={r.time_of_day} />
+                        </div>
                         {manuallyPickedIds.has(r.id) && (
                           <UnpickLink routineId={r.id} logDate={today} />
                         )}
