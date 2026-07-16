@@ -10,7 +10,7 @@ import { todayStr } from "@/lib/rutinas";
 import {
   type SpecialPeriod,
   type HealthState,
-  PERIOD_LABELS,
+  periodLabel,
   isDateInPeriod,
   daysUntil,
 } from "@/lib/periods";
@@ -117,7 +117,7 @@ export default async function Inicio() {
           <div className="mt-3 space-y-2">
             {activePeriod && (
               <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-800">
-                {PERIOD_LABELS[activePeriod.type]} hasta{" "}
+                {periodLabel(activePeriod)} hasta{" "}
                 {new Date(activePeriod.end_date + "T00:00:00").toLocaleDateString(
                   "es-ES",
                   { day: "numeric", month: "long" },
@@ -131,8 +131,7 @@ export default async function Inicio() {
                 className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-800"
               >
                 En {daysUntil(p.start_date, today)}{" "}
-                {daysUntil(p.start_date, today) === 1 ? "día" : "días"}:{" "}
-                {PERIOD_LABELS[p.type]}
+                {daysUntil(p.start_date, today) === 1 ? "día" : "días"}: {periodLabel(p)}
               </div>
             ))}
 
@@ -144,7 +143,7 @@ export default async function Inicio() {
 
             {!activePeriod && upcomingPeriods.length === 0 && !currentHealth && (
               <p className="text-sm text-rose-700/60">
-                Nada especial por ahora. Agenda vacaciones o viajes en Rutinas → Configurar.
+                Nada especial por ahora. Agenda vacaciones o viajes en Rutinas → 🏖️ Vacaciones.
               </p>
             )}
           </div>

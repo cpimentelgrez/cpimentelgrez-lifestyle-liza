@@ -13,7 +13,12 @@ import Tabs from "@/components/Tabs";
 import BottomNav from "@/components/BottomNav";
 import PeriodForm from "@/components/PeriodForm";
 import { deletePeriod } from "../periodos/actions";
-import { type SpecialPeriod, PERIOD_LABELS, isDateInPeriod } from "@/lib/periods";
+import {
+  type SpecialPeriod,
+  periodLabel,
+  pausesHome,
+  isDateInPeriod,
+} from "@/lib/periods";
 import {
   type Routine,
   type TimeOfDay,
@@ -119,9 +124,10 @@ export default async function RutinasPage() {
 
   // Mientras dura un periodo de vacaciones/viaje, las rutinas de hogar se pausan.
   const fixedAll = routines.filter((r) => !r.is_occasional);
-  const fixed = activePeriod
-    ? fixedAll.filter((r) => r.category !== "hogar")
-    : fixedAll;
+  const fixed =
+    activePeriod && pausesHome(activePeriod)
+      ? fixedAll.filter((r) => r.category !== "hogar")
+      : fixedAll;
   const occasional = routines.filter((r) => r.is_occasional);
 
   const tomorrow = addDays(today, 1);
@@ -243,12 +249,12 @@ export default async function RutinasPage() {
 
         {activePeriod && (
           <div className="mt-3 rounded-lg bg-rose-50 px-3 py-2.5 text-sm text-rose-800">
-            {PERIOD_LABELS[activePeriod.type]} hasta{" "}
+            {periodLabel(activePeriod)} hasta{" "}
             {new Date(activePeriod.end_date + "T00:00:00").toLocaleDateString("es-ES", {
               day: "numeric",
               month: "long",
-            })}{" "}
-            · tus rutinas de hogar están en pausa.
+            })}
+            {pausesHome(activePeriod) && " · tus rutinas de hogar están en pausa."}
           </div>
         )}
 
@@ -405,48 +411,49 @@ export default async function RutinasPage() {
           <AddRoutineForm />
         </div>
       </section>
-
-      <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-rose-100">
-        <h2 className="text-lg font-semibold text-rose-900">🏖️ Vacaciones y viajes</h2>
-        <p className="mt-1 text-sm text-rose-700/60">
-          Agenda tus vacaciones o viajes de trabajo. Se te recuerda armar la maleta y
-          se pausan las rutinas de hogar mientras dure.
-        </p>
-
-        {periods.length > 0 && (
-          <ul className="mt-4 space-y-2">
-            {periods.map((p) => (
-              <li
-                key={p.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-rose-100 px-3 py-2"
-              >
-                <div>
-                  <p className="text-sm font-medium text-rose-900">
-                    {PERIOD_LABELS[p.type]}
-                  </p>
-                  <p className="text-xs text-rose-700/60">
-                    {p.start_date} → {p.end_date}
-                  </p>
-                </div>
-                <form action={deletePeriod}>
-                  <input type="hidden" name="id" value={p.id} />
-                  <button
-                    type="submit"
-                    className="text-xs text-rose-400 hover:text-rose-600 hover:underline"
-                  >
-                    Quitar
-                  </button>
-                </form>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <div className="mt-4 rounded-xl bg-rose-50/60 p-4">
-          <PeriodForm />
-        </div>
-      </section>
     </>
+  );
+
+  const vacacionesContent = (
+    <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-rose-100">
+      <h2 className="text-lg font-semibold text-rose-900">🏖️ Vacaciones y viajes</h2>
+      <p className="mt-1 text-sm text-rose-700/60">
+        Agenda tus vacaciones, viajes de trabajo, u otro periodo especial (exámenes,
+        mudanza…). Vacaciones y viaje te recuerdan armar la maleta y pausan las
+        rutinas de hogar mientras dure.
+      </p>
+
+      {periods.length > 0 && (
+        <ul className="mt-4 space-y-2">
+          {periods.map((p) => (
+            <li
+              key={p.id}
+              className="flex items-center justify-between gap-3 rounded-lg border border-rose-100 px-3 py-2"
+            >
+              <div>
+                <p className="text-sm font-medium text-rose-900">{periodLabel(p)}</p>
+                <p className="text-xs text-rose-700/60">
+                  {p.start_date} → {p.end_date}
+                </p>
+              </div>
+              <form action={deletePeriod}>
+                <input type="hidden" name="id" value={p.id} />
+                <button
+                  type="submit"
+                  className="text-xs text-rose-400 hover:text-rose-600 hover:underline"
+                >
+                  Quitar
+                </button>
+              </form>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-4 rounded-xl bg-rose-50/60 p-4">
+        <PeriodForm />
+      </div>
+    </section>
   );
 
   return (
@@ -480,6 +487,7 @@ export default async function RutinasPage() {
         <Tabs
           tabs={[
             { id: "hoy", label: "📅 Hoy", content: hoyContent },
+            { id: "vacaciones", label: "🏖️ Vacaciones", content: vacacionesContent },
             { id: "configurar", label: "⚙️ Configurar", content: configurarContent },
           ]}
         />

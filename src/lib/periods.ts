@@ -1,4 +1,4 @@
-export type PeriodType = "vacaciones" | "viaje";
+export type PeriodType = "vacaciones" | "viaje" | "otro";
 
 export type SpecialPeriod = {
   id: string;
@@ -8,10 +8,21 @@ export type SpecialPeriod = {
   note: string | null;
 };
 
-export const PERIOD_LABELS: Record<PeriodType, string> = {
+export const PERIOD_LABELS: Record<Exclude<PeriodType, "otro">, string> = {
   vacaciones: "🏖️ Vacaciones",
   viaje: "💼 Viaje de trabajo",
 };
+
+// Etiqueta a mostrar: fija para vacaciones/viaje, o el nombre libre para "otro".
+export function periodLabel(p: SpecialPeriod): string {
+  if (p.type === "otro") return `📌 ${p.note?.trim() || "Periodo especial"}`;
+  return PERIOD_LABELS[p.type];
+}
+
+// Solo vacaciones y viaje pausan las rutinas de hogar y agendan maletas.
+export function pausesHome(p: SpecialPeriod): boolean {
+  return p.type === "vacaciones" || p.type === "viaje";
+}
 
 export type HealthState = "enferma" | "spm" | "menstruacion";
 

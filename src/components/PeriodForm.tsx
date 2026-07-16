@@ -3,13 +3,15 @@
 import { useState } from "react";
 import { createPeriod } from "@/app/periodos/actions";
 
-// Formulario para agendar un periodo de vacaciones o viaje de trabajo.
+type PeriodType = "vacaciones" | "viaje" | "otro";
+
+// Formulario para agendar un periodo (vacaciones, viaje, u otro con nombre libre).
 export default function PeriodForm() {
-  const [type, setType] = useState<"vacaciones" | "viaje">("vacaciones");
+  const [type, setType] = useState<PeriodType>("vacaciones");
 
   return (
     <form action={createPeriod} className="space-y-3">
-      <div className="flex gap-3 text-sm text-rose-900">
+      <div className="flex flex-wrap gap-3 text-sm text-rose-900">
         <label className="flex items-center gap-1.5">
           <input
             type="radio"
@@ -32,7 +34,34 @@ export default function PeriodForm() {
           />
           💼 Viaje de trabajo
         </label>
+        <label className="flex items-center gap-1.5">
+          <input
+            type="radio"
+            name="type"
+            value="otro"
+            checked={type === "otro"}
+            onChange={() => setType("otro")}
+            className="text-rose-500 focus:ring-rose-400"
+          />
+          📌 Otro
+        </label>
       </div>
+
+      {type === "otro" && (
+        <div>
+          <label htmlFor="note" className="block text-xs font-medium text-rose-700/70">
+            ¿Qué es?
+          </label>
+          <input
+            id="note"
+            name="note"
+            type="text"
+            required
+            placeholder="Ej. Exámenes, mudanza, visita familiar…"
+            className="mt-1 w-full rounded-lg border border-rose-200 px-3 py-2 text-sm text-rose-900 outline-none focus:border-rose-400"
+          />
+        </div>
+      )}
 
       <div className="flex flex-wrap items-end gap-3">
         <div>
@@ -66,10 +95,17 @@ export default function PeriodForm() {
           Agendar
         </button>
       </div>
-      <p className="text-xs text-rose-700/50">
-        Se agregan solas las tareas de maletas (antes de salir y al volver), y las
-        rutinas de hogar se pausan mientras dure.
-      </p>
+
+      {type === "otro" ? (
+        <p className="text-xs text-rose-700/50">
+          Solo se muestra como aviso. No pausa rutinas ni agenda maletas.
+        </p>
+      ) : (
+        <p className="text-xs text-rose-700/50">
+          Se agregan solas las tareas de maletas (antes de salir y al volver), y las
+          rutinas de hogar se pausan mientras dure.
+        </p>
+      )}
     </form>
   );
 }
