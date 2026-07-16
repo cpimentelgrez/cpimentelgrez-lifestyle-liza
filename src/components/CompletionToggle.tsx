@@ -24,9 +24,9 @@ export default function CompletionToggle({
       onClick={() =>
         startTransition(() => toggleCompletion(routineId, logDate, !done))
       }
-      className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition ${
+      className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-all duration-300 ${
         done
-          ? "border-green-200 bg-green-50"
+          ? "border-green-200 bg-green-50 opacity-60 brightness-95"
           : "border-rose-200 bg-white hover:border-rose-300"
       } ${pending ? "opacity-50" : ""}`}
     >

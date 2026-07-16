@@ -23,8 +23,10 @@ export default function SubtaskChecklist({
 
   return (
     <div
-      className={`rounded-lg border px-3 py-2.5 ${
-        allDone ? "border-green-200 bg-green-50" : "border-rose-200 bg-white"
+      className={`rounded-lg border px-3 py-2.5 transition-all duration-300 ${
+        allDone
+          ? "border-green-200 bg-green-50 opacity-60 brightness-95"
+          : "border-rose-200 bg-white"
       } ${pending ? "opacity-60" : ""}`}
     >
       <div className="flex items-center justify-between">
@@ -49,9 +51,9 @@ export default function SubtaskChecklist({
               onClick={() =>
                 startTransition(() => toggleSubtask(routineId, logDate, s))
               }
-              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition ${
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-all duration-300 ${
                 isDone
-                  ? "border-green-500 bg-green-500 text-white"
+                  ? "border-green-400 bg-green-400 text-white opacity-70"
                   : "border-rose-200 bg-white text-rose-700 hover:border-rose-400"
               }`}
             >

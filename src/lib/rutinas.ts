@@ -86,3 +86,23 @@ export function todayStr(): string {
   const off = d.getTimezoneOffset();
   return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
 }
+
+// Fecha cualquiera en formato YYYY-MM-DD (hora local).
+export function fmtDate(d: Date): string {
+  const off = d.getTimezoneOffset();
+  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
+}
+
+// ¿Cuenta esta rutina como "hecha" ese día? Si tiene subtareas, deben
+// estar todas marcadas; si no, basta con que exista la fila de completado.
+export function isRoutineDone(
+  routine: Routine,
+  doneSubtasks: string[] | undefined,
+  hasCompletionRow: boolean,
+): boolean {
+  if (routine.subtasks.length > 0) {
+    const done = new Set(doneSubtasks ?? []);
+    return routine.subtasks.every((s) => done.has(s));
+  }
+  return hasCompletionRow;
+}

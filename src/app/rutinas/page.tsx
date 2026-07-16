@@ -16,6 +16,7 @@ import {
   WEEKDAY_SHORT,
   WEEKDAY_LONG,
   isoWeekday,
+  isRoutineDone,
   todayStr,
 } from "@/lib/rutinas";
 
@@ -80,11 +81,7 @@ export default async function RutinasPage() {
 
   // ¿Una rutina cuenta como hecha hoy?
   function routineDone(r: Routine): boolean {
-    if (r.subtasks.length > 0) {
-      const done = new Set(doneSubtasks.get(r.id) ?? []);
-      return r.subtasks.every((s) => done.has(s));
-    }
-    return rowExists.has(r.id);
+    return isRoutineDone(r, doneSubtasks.get(r.id), rowExists.has(r.id));
   }
 
   const fixed = routines.filter((r) => !r.is_occasional);
@@ -138,6 +135,12 @@ export default async function RutinasPage() {
             <p className="text-xs text-rose-700/60">Rutinas y tareas · {user.email}</p>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href="/rutinas/seguimiento"
+              className="rounded-lg bg-rose-100 px-3 py-1.5 text-sm font-medium text-rose-700 transition hover:bg-rose-200"
+            >
+              📊 Seguimiento
+            </Link>
             <Link
               href="/"
               className="rounded-lg px-3 py-1.5 text-sm text-rose-600 transition hover:bg-rose-50"
