@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { type UsageRow, daysSinceLastLog, needsAttention } from "@/lib/admin";
 
 // Barra de "uso" de un área: muestra cuántos días se ha rellenado (no el contenido).
@@ -102,14 +103,20 @@ export default function UsageCard({ row }: { row: UsageRow }) {
       </div>
 
       {row.routines_active > 0 && (
-        <div className="mt-3 flex items-center gap-2 rounded-lg bg-rose-50/70 px-3 py-2 text-xs text-rose-800">
-          <span>💪 Rutinas</span>
-          <span className="font-semibold">
-            {row.routines_done_7} completadas
-          </span>
-          <span className="text-rose-700/50">
-            (últimos 7 días · {row.routines_active} rutinas activas)
-          </span>
+        <div className="mt-3 flex items-center justify-between gap-2 rounded-lg bg-rose-50/70 px-3 py-2 text-xs text-rose-800">
+          <div>
+            <span>💪 Rutinas</span>{" "}
+            <span className="font-semibold">{row.routines_done_7} completadas</span>{" "}
+            <span className="text-rose-700/50">
+              (últimos 7 días · {row.routines_active} activas)
+            </span>
+          </div>
+          <Link
+            href={`/admin/seguimiento/${row.user_id}?email=${encodeURIComponent(row.email)}`}
+            className="shrink-0 font-medium text-rose-600 hover:underline"
+          >
+            📊 Ver
+          </Link>
         </div>
       )}
 
