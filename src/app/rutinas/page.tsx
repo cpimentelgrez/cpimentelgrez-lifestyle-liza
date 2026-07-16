@@ -8,6 +8,7 @@ import CompletionToggle from "@/components/CompletionToggle";
 import SubtaskChecklist from "@/components/SubtaskChecklist";
 import OccasionalChip from "@/components/OccasionalChip";
 import UnpickLink from "@/components/UnpickLink";
+import Collapsible from "@/components/Collapsible";
 import RoutineEditor from "@/components/RoutineEditor";
 import AddRoutineForm from "@/components/AddRoutineForm";
 import Tabs from "@/components/Tabs";
@@ -317,22 +318,30 @@ export default async function RutinasPage() {
         {/* Ocasionales sin fecha: "+ agregar a hoy" cuando decidas hacerlas ahora. */}
         {occasionalAvailable.length > 0 && (
           <div className="mt-6 border-t border-rose-100 pt-5">
-            <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-amber-800">
-              📦 Ocasionales
-            </p>
-            <p className="mb-2 text-xs text-amber-700/60">
-              Tócala para sumarla a los pendientes de hoy.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {occasionalAvailable.map((r) => (
-                <OccasionalChip
-                  key={r.id}
-                  routineId={r.id}
-                  logDate={today}
-                  label={r.name}
-                />
-              ))}
-            </div>
+            <Collapsible
+              label={
+                <span className="flex items-center gap-1.5 text-sm font-semibold text-amber-800">
+                  📦 Ocasionales{" "}
+                  <span className="text-xs font-normal text-amber-700/50">
+                    ({occasionalAvailable.length})
+                  </span>
+                </span>
+              }
+            >
+              <p className="mb-2 text-xs text-amber-700/60">
+                Tócala para sumarla a los pendientes de hoy.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {occasionalAvailable.map((r) => (
+                  <OccasionalChip
+                    key={r.id}
+                    routineId={r.id}
+                    logDate={today}
+                    label={r.name}
+                  />
+                ))}
+              </div>
+            </Collapsible>
           </div>
         )}
       </section>
