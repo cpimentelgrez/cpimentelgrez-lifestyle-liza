@@ -1,9 +1,10 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import { logout } from "../login/actions";
 import DailyLogForm, { type DailyLog } from "@/components/DailyLogForm";
 import LogHistory from "@/components/LogHistory";
+import BottomNav from "@/components/BottomNav";
 
 export default async function RegistroPage({
   searchParams,
@@ -21,6 +22,7 @@ export default async function RegistroPage({
     redirect("/login");
   }
 
+  const admin = await isCurrentUserAdmin();
   const today = new Date().toISOString().slice(0, 10);
 
   // Registro de hoy (si existe) y los últimos 30 días de historial.
@@ -47,33 +49,25 @@ export default async function RegistroPage({
     [];
 
   return (
-    <div className="min-h-full bg-rose-50">
+    <div className="flex min-h-full flex-col bg-rose-50">
       <header className="border-b border-rose-100 bg-white">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
           <div>
             <h1 className="text-lg font-semibold text-rose-900">Mi registro diario 🌸</h1>
             <p className="text-xs text-rose-700/60">{user.email}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/"
+          <form action={logout}>
+            <button
+              type="submit"
               className="rounded-lg px-3 py-1.5 text-sm text-rose-600 transition hover:bg-rose-50"
             >
-              🏠 Inicio
-            </Link>
-            <form action={logout}>
-              <button
-                type="submit"
-                className="rounded-lg px-3 py-1.5 text-sm text-rose-600 transition hover:bg-rose-50"
-              >
-                Cerrar sesión
-              </button>
-            </form>
-          </div>
+              Cerrar sesión
+            </button>
+          </form>
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl space-y-8 px-4 py-8">
+      <main className="mx-auto w-full max-w-2xl flex-1 space-y-8 px-4 py-8">
         {guardado && (
           <p className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-800">
             ¡Registro guardado! 🎉
@@ -104,6 +98,8 @@ export default async function RegistroPage({
           <LogHistory logs={(history as DailyLog[]) ?? []} />
         </section>
       </main>
+
+      <BottomNav active="registro" admin={admin} />
     </div>
   );
 }

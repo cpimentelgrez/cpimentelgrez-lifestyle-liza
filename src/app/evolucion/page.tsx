@@ -1,8 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import { logout } from "../login/actions";
 import TrendChart, { type Series } from "@/components/TrendChart";
+import BottomNav from "@/components/BottomNav";
 
 type Row = {
   log_date: string;
@@ -32,6 +33,7 @@ export default async function EvolucionPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const admin = await isCurrentUserAdmin();
   const today = new Date();
   const since = new Date(today);
   since.setDate(since.getDate() - 29);
@@ -93,33 +95,25 @@ export default async function EvolucionPage() {
   const avgAnx = average(last7Anx);
 
   return (
-    <div className="min-h-full bg-rose-50">
+    <div className="flex min-h-full flex-col bg-rose-50">
       <header className="border-b border-rose-100 bg-white">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
           <div>
             <h1 className="text-lg font-semibold text-rose-900">Evolución 📈</h1>
             <p className="text-xs text-rose-700/60">Tus últimos días · {user.email}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/"
+          <form action={logout}>
+            <button
+              type="submit"
               className="rounded-lg px-3 py-1.5 text-sm text-rose-600 transition hover:bg-rose-50"
             >
-              🏠 Inicio
-            </Link>
-            <form action={logout}>
-              <button
-                type="submit"
-                className="rounded-lg px-3 py-1.5 text-sm text-rose-600 transition hover:bg-rose-50"
-              >
-                Cerrar sesión
-              </button>
-            </form>
-          </div>
+              Cerrar sesión
+            </button>
+          </form>
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl space-y-6 px-4 py-8">
+      <main className="mx-auto w-full max-w-2xl flex-1 space-y-6 px-4 py-8">
         {!hasData ? (
           <p className="rounded-2xl bg-white p-6 text-center text-sm text-rose-700/60 shadow-sm ring-1 ring-rose-100">
             Aún no hay suficientes registros para mostrar tu evolución. Cuando lleves
@@ -168,6 +162,8 @@ export default async function EvolucionPage() {
           </>
         )}
       </main>
+
+      <BottomNav active="evolucion" admin={admin} />
     </div>
   );
 }

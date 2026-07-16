@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isCurrentUserAdmin } from "@/lib/admin";
 import { logout } from "./login/actions";
+import BottomNav from "@/components/BottomNav";
 
 type Card = {
   href: string;
@@ -56,7 +57,7 @@ export default async function Inicio() {
   }
 
   return (
-    <div className="min-h-full bg-rose-50">
+    <div className="flex min-h-full flex-col bg-rose-50">
       <header className="border-b border-rose-100 bg-white">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
           <h1 className="text-lg font-semibold text-rose-900">Lifestyle 🌸</h1>
@@ -71,7 +72,7 @@ export default async function Inicio() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 py-8">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
         {/* Bienvenida */}
         <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-rose-100 sm:grid sm:grid-cols-2">
           <div className="relative h-72 w-full bg-rose-100 sm:h-full sm:min-h-[300px]">
@@ -118,6 +119,8 @@ export default async function Inicio() {
           Sesión iniciada como {user.email}
         </p>
       </main>
+
+      <BottomNav active="inicio" admin={admin} />
     </div>
   );
 }

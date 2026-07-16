@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isCurrentUserAdmin, needsAttention, type UsageRow } from "@/lib/admin";
 import { logout } from "../login/actions";
 import UsageCard from "@/components/UsageCard";
+import BottomNav from "@/components/BottomNav";
 
 export default async function AdminPage() {
   const supabase = await createClient();
@@ -35,33 +35,25 @@ export default async function AdminPage() {
   );
 
   return (
-    <div className="min-h-full bg-rose-50">
+    <div className="flex min-h-full flex-col bg-rose-50">
       <header className="border-b border-rose-100 bg-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
           <div>
             <h1 className="text-lg font-semibold text-rose-900">Panel de administración 🛡️</h1>
             <p className="text-xs text-rose-700/60">Seguimiento de uso · {user.email}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/"
+          <form action={logout}>
+            <button
+              type="submit"
               className="rounded-lg px-3 py-1.5 text-sm text-rose-600 transition hover:bg-rose-50"
             >
-              🏠 Inicio
-            </Link>
-            <form action={logout}>
-              <button
-                type="submit"
-                className="rounded-lg px-3 py-1.5 text-sm text-rose-600 transition hover:bg-rose-50"
-              >
-                Cerrar sesión
-              </button>
-            </form>
-          </div>
+              Cerrar sesión
+            </button>
+          </form>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-6 px-4 py-8">
+      <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-8">
         <div className="rounded-2xl bg-white p-5 ring-1 ring-rose-100">
           <p className="text-sm text-rose-700/70">
             Aquí ves <span className="font-medium text-rose-900">si</span> cada cuenta está
@@ -104,6 +96,8 @@ export default async function AdminPage() {
           </ul>
         )}
       </main>
+
+      <BottomNav active="admin" admin />
     </div>
   );
 }

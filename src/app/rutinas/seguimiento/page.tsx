@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import { logout } from "../../login/actions";
+import BottomNav from "@/components/BottomNav";
 import {
   type Routine,
   type TimeOfDay,
@@ -32,6 +34,8 @@ export default async function SeguimientoPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  const admin = await isCurrentUserAdmin();
 
   const today = new Date();
   const since = new Date(today);
@@ -133,7 +137,7 @@ export default async function SeguimientoPage() {
   const hasData = totalSched2 > 0 || taskPercents.length > 0;
 
   return (
-    <div className="min-h-full bg-rose-50">
+    <div className="flex min-h-full flex-col bg-rose-50">
       <header className="border-b border-rose-100 bg-white">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
           <div>
@@ -145,13 +149,7 @@ export default async function SeguimientoPage() {
               href="/rutinas"
               className="rounded-lg px-3 py-1.5 text-sm text-rose-600 transition hover:bg-rose-50"
             >
-              💪 Rutinas
-            </Link>
-            <Link
-              href="/"
-              className="rounded-lg px-3 py-1.5 text-sm text-rose-600 transition hover:bg-rose-50"
-            >
-              🏠 Inicio
+              ← Rutinas
             </Link>
             <form action={logout}>
               <button
@@ -165,7 +163,7 @@ export default async function SeguimientoPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl space-y-6 px-4 py-8">
+      <main className="mx-auto w-full max-w-2xl flex-1 space-y-6 px-4 py-8">
         {!hasData ? (
           <p className="rounded-2xl bg-white p-6 text-center text-sm text-rose-700/60 shadow-sm ring-1 ring-rose-100">
             Aún no hay suficiente historial. Marca tus rutinas y registra tus tareas
@@ -254,6 +252,8 @@ export default async function SeguimientoPage() {
           </>
         )}
       </main>
+
+      <BottomNav active="rutinas" admin={admin} />
     </div>
   );
 }

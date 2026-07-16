@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import { logout } from "../login/actions";
 import { moveRoutine } from "./actions";
 import CompletionToggle from "@/components/CompletionToggle";
 import SubtaskChecklist from "@/components/SubtaskChecklist";
+import OccasionalChip from "@/components/OccasionalChip";
 import RoutineEditor from "@/components/RoutineEditor";
 import AddRoutineForm from "@/components/AddRoutineForm";
 import Tabs from "@/components/Tabs";
+import BottomNav from "@/components/BottomNav";
 import {
   type Routine,
   type TimeOfDay,
@@ -34,6 +37,7 @@ export default async function RutinasPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const admin = await isCurrentUserAdmin();
   const today = todayStr();
   const weekday = isoWeekday(new Date());
 
@@ -91,6 +95,8 @@ export default async function RutinasPage() {
 
   const fixed = routines.filter((r) => !r.is_occasional);
   const occasional = routines.filter((r) => r.is_occasional);
+  const occasionalChips = occasional.filter((r) => r.subtasks.length === 0);
+  const occasionalWithSubtasks = occasional.filter((r) => r.subtasks.length > 0);
 
   // Rutinas de hoy (según el día de la semana), agrupadas por rango horario.
   const todaysByTime: Record<TimeOfDay, Routine[]> = {
@@ -105,7 +111,6 @@ export default async function RutinasPage() {
   const todaysList = TIME_ORDER.flatMap((t) => todaysByTime[t]);
   const totalHoy = todaysList.length;
   const hechasHoy = todaysList.filter(routineDone).length;
-  const hechasOcasionales = occasional.filter(routineDone).length;
 
   // Renderiza un ítem del checklist (con o sin subtareas).
   function renderItem(r: Routine, occasionalStyle = false) {
@@ -208,6 +213,33 @@ export default async function RutinasPage() {
             )}
           </div>
         )}
+
+        {/* Ocasionales: chips rápidos, en color ámbar, dentro de la misma vista de hoy. */}
+        {occasional.length > 0 && (
+          <div className="mt-6 border-t border-rose-100 pt-5">
+            <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-amber-800">
+              📦 Ocasionales de hoy
+            </p>
+            {occasionalChips.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {occasionalChips.map((r) => (
+                  <OccasionalChip
+                    key={r.id}
+                    routineId={r.id}
+                    logDate={today}
+                    done={rowExists.has(r.id)}
+                    label={r.name}
+                  />
+                ))}
+              </div>
+            )}
+            {occasionalWithSubtasks.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {occasionalWithSubtasks.map((r) => renderItem(r, true))}
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Vista semanal completa */}
@@ -262,30 +294,6 @@ export default async function RutinasPage() {
     </>
   );
 
-  const ocasionalesContent = (
-    <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-amber-100">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-amber-900">📦 Ocasionales</h2>
-        {occasional.length > 0 && (
-          <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-700">
-            {hechasOcasionales}/{occasional.length}
-          </span>
-        )}
-      </div>
-      <p className="mt-1 text-sm text-amber-700/60">
-        Marca las que toquen hoy. No tienen días fijos.
-      </p>
-
-      {occasional.length === 0 ? (
-        <p className="mt-4 text-sm text-amber-700/60">
-          Aún no tienes tareas ocasionales. Añádelas en “Configurar”. 🌱
-        </p>
-      ) : (
-        <div className="mt-5 space-y-2">{occasional.map((r) => renderItem(r, true))}</div>
-      )}
-    </section>
-  );
-
   const configurarContent = (
     <>
       {CATEGORY_ORDER.map((cat) => {
@@ -326,7 +334,7 @@ export default async function RutinasPage() {
   );
 
   return (
-    <div className="min-h-full bg-rose-50">
+    <div className="flex min-h-full flex-col bg-rose-50">
       <header className="border-b border-rose-100 bg-white">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
           <div>
@@ -340,12 +348,6 @@ export default async function RutinasPage() {
             >
               📊 Seguimiento
             </Link>
-            <Link
-              href="/"
-              className="rounded-lg px-3 py-1.5 text-sm text-rose-600 transition hover:bg-rose-50"
-            >
-              🏠 Inicio
-            </Link>
             <form action={logout}>
               <button
                 type="submit"
@@ -358,15 +360,16 @@ export default async function RutinasPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 py-8">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
         <Tabs
           tabs={[
             { id: "hoy", label: "📅 Hoy", content: hoyContent },
-            { id: "ocasionales", label: "📦 Ocasionales", content: ocasionalesContent },
             { id: "configurar", label: "⚙️ Configurar", content: configurarContent },
           ]}
         />
       </main>
+
+      <BottomNav active="rutinas" admin={admin} />
     </div>
   );
 }
