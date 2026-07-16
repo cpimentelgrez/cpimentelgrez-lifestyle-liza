@@ -132,6 +132,34 @@ export async function moveRoutine(formData: FormData) {
   redirect("/rutinas");
 }
 
+// "Jala" un ocasional sin fecha al día: pasa a contar como pendiente de hoy.
+export async function pickOccasional(routineId: string, logDate: string) {
+  const { supabase, user } = await requireUser();
+
+  await supabase
+    .from("routine_picks")
+    .upsert(
+      { routine_id: routineId, user_id: user.id, log_date: logDate },
+      { onConflict: "routine_id,log_date" },
+    );
+
+  revalidatePath("/rutinas");
+}
+
+// Lo quita del día (vuelve a ser solo un chip disponible).
+export async function unpickOccasional(routineId: string, logDate: string) {
+  const { supabase, user } = await requireUser();
+
+  await supabase
+    .from("routine_picks")
+    .delete()
+    .eq("routine_id", routineId)
+    .eq("log_date", logDate)
+    .eq("user_id", user.id);
+
+  revalidatePath("/rutinas");
+}
+
 export async function deleteRoutine(formData: FormData) {
   const { supabase, user } = await requireUser();
 

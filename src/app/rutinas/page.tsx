@@ -7,6 +7,7 @@ import { moveRoutine } from "./actions";
 import CompletionToggle from "@/components/CompletionToggle";
 import SubtaskChecklist from "@/components/SubtaskChecklist";
 import OccasionalChip from "@/components/OccasionalChip";
+import UnpickLink from "@/components/UnpickLink";
 import RoutineEditor from "@/components/RoutineEditor";
 import AddRoutineForm from "@/components/AddRoutineForm";
 import Tabs from "@/components/Tabs";
@@ -114,6 +115,13 @@ export default async function RutinasPage() {
   const periods = (periodsData as SpecialPeriod[]) ?? [];
   const activePeriod = periods.find((p) => isDateInPeriod(p, today));
 
+  const { data: picksData } = await supabase
+    .from("routine_picks")
+    .select("routine_id")
+    .eq("user_id", user.id)
+    .eq("log_date", today);
+  const pickedIds = new Set((picksData ?? []).map((p: { routine_id: string }) => p.routine_id));
+
   const { data: healthRow } = await supabase
     .from("health_states")
     .select("state")
@@ -140,14 +148,18 @@ export default async function RutinasPage() {
   const occasionalReminder = occasional.filter(
     (r) => hasSchedule(r) && occasionalDueOn(r, tomorrow),
   );
-  // Ocasionales sin fecha: quedan como chips manuales de "cuando toque".
+  // Ocasionales sin fecha: quedan disponibles como chips "+ agregar a hoy",
+  // salvo que ya se hayan jalado al día (routine_picks) — ahí cuentan como pendientes.
   const occasionalFreeform = occasional.filter((r) => !hasSchedule(r));
-  const occasionalChips = occasionalFreeform.filter((r) => r.subtasks.length === 0);
-  const occasionalWithSubtasks = occasionalFreeform.filter((r) => r.subtasks.length > 0);
-  const dueTodayIds = new Set(occasionalDueToday.map((r) => r.id));
+  const occasionalPicked = occasionalFreeform.filter((r) => pickedIds.has(r.id));
+  const occasionalAvailable = occasionalFreeform.filter((r) => !pickedIds.has(r.id));
+  const dueTodayIds = new Set(
+    [...occasionalDueToday, ...occasionalPicked].map((r) => r.id),
+  );
+  const manuallyPickedIds = new Set(occasionalPicked.map((r) => r.id));
 
   // Rutinas de hoy (según el día de la semana), agrupadas por rango horario.
-  // Se suman los ocasionales programados que tocan hoy.
+  // Se suman los ocasionales programados que tocan hoy y los jalados manualmente.
   const todaysByTime: Record<TimeOfDay, Routine[]> = {
     manana: [],
     tarde: [],
@@ -156,7 +168,7 @@ export default async function RutinasPage() {
   for (const r of fixed) {
     if (r.weekdays.includes(weekday)) todaysByTime[r.time_of_day].push(r);
   }
-  for (const r of occasionalDueToday) {
+  for (const r of [...occasionalDueToday, ...occasionalPicked]) {
     todaysByTime[r.time_of_day].push(r);
   }
 
@@ -277,7 +289,14 @@ export default async function RutinasPage() {
                     {TIME_LABELS[t]}
                   </p>
                   <div className="space-y-2">
-                    {todaysByTime[t].map((r) => renderItem(r, dueTodayIds.has(r.id)))}
+                    {todaysByTime[t].map((r) => (
+                      <div key={r.id}>
+                        {renderItem(r, dueTodayIds.has(r.id))}
+                        {manuallyPickedIds.has(r.id) && (
+                          <UnpickLink routineId={r.id} logDate={today} />
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               ) : null,
@@ -295,30 +314,25 @@ export default async function RutinasPage() {
           </div>
         )}
 
-        {/* Ocasionales sin fecha: chips rápidos, en color ámbar, para cuando toquen. */}
-        {occasionalFreeform.length > 0 && (
+        {/* Ocasionales sin fecha: "+ agregar a hoy" cuando decidas hacerlas ahora. */}
+        {occasionalAvailable.length > 0 && (
           <div className="mt-6 border-t border-rose-100 pt-5">
             <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-amber-800">
               📦 Ocasionales
             </p>
-            {occasionalChips.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {occasionalChips.map((r) => (
-                  <OccasionalChip
-                    key={r.id}
-                    routineId={r.id}
-                    logDate={today}
-                    done={rowExists.has(r.id)}
-                    label={r.name}
-                  />
-                ))}
-              </div>
-            )}
-            {occasionalWithSubtasks.length > 0 && (
-              <div className="mt-2 space-y-2">
-                {occasionalWithSubtasks.map((r) => renderItem(r, true))}
-              </div>
-            )}
+            <p className="mb-2 text-xs text-amber-700/60">
+              Tócala para sumarla a los pendientes de hoy.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {occasionalAvailable.map((r) => (
+                <OccasionalChip
+                  key={r.id}
+                  routineId={r.id}
+                  logDate={today}
+                  label={r.name}
+                />
+              ))}
+            </div>
           </div>
         )}
       </section>
