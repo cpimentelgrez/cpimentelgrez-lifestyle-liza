@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { TimeOfDay } from "@/lib/rutinas";
+import type { TimeOfDay, Category } from "@/lib/rutinas";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -17,6 +17,10 @@ async function requireUser() {
 function parseTime(value: FormDataEntryValue | null): TimeOfDay {
   const v = String(value ?? "");
   return v === "tarde" || v === "noche" ? v : "manana";
+}
+
+function parseCategory(value: FormDataEntryValue | null): Category {
+  return String(value ?? "") === "autocuidado" ? "autocuidado" : "hogar";
 }
 
 // Días seleccionados (checkboxes name="weekdays" value=1..7).
@@ -42,6 +46,7 @@ export async function addRoutine(formData: FormData) {
     time_of_day: parseTime(formData.get("time_of_day")),
     weekdays,
     is_occasional: isOccasional,
+    category: parseCategory(formData.get("category")),
   });
 
   if (error) redirect(`/rutinas?error=${encodeURIComponent(error.message)}`);
@@ -50,37 +55,53 @@ export async function addRoutine(formData: FormData) {
   redirect("/rutinas");
 }
 
-// Sube o baja una rutina en el orden (columna sort).
+// Sube o baja una rutina en el orden (columna sort), dentro de su mismo
+// grupo (scope = "ocasional" o una categoría) para no mezclar cajas.
 export async function moveRoutine(formData: FormData) {
   const { supabase, user } = await requireUser();
 
   const id = String(formData.get("id") ?? "");
   const dir = String(formData.get("dir") ?? "");
+  const scope = String(formData.get("scope") ?? "");
   if (!id || (dir !== "up" && dir !== "down")) redirect("/rutinas");
 
   const { data } = await supabase
     .from("routines")
-    .select("id")
+    .select("id, sort, is_occasional, category")
     .eq("user_id", user.id)
     .order("sort", { ascending: true })
     .order("created_at", { ascending: true });
 
-  const list = (data ?? []) as { id: string }[];
+  let list = (data ?? []) as {
+    id: string;
+    sort: number;
+    is_occasional: boolean;
+    category: string;
+  }[];
+
+  if (scope === "ocasional") {
+    list = list.filter((r) => r.is_occasional);
+  } else if (scope) {
+    list = list.filter((r) => !r.is_occasional && r.category === scope);
+  }
+
   const i = list.findIndex((r) => r.id === id);
   const j = dir === "up" ? i - 1 : i + 1;
 
-  // Si es válido, intercambia posiciones y reescribe el orden.
+  // Si es válido, intercambia el valor de orden entre las dos filas.
   if (i !== -1 && j >= 0 && j < list.length) {
-    [list[i], list[j]] = [list[j], list[i]];
-    await Promise.all(
-      list.map((r, idx) =>
-        supabase
-          .from("routines")
-          .update({ sort: idx })
-          .eq("id", r.id)
-          .eq("user_id", user.id),
-      ),
-    );
+    await Promise.all([
+      supabase
+        .from("routines")
+        .update({ sort: list[j].sort })
+        .eq("id", list[i].id)
+        .eq("user_id", user.id),
+      supabase
+        .from("routines")
+        .update({ sort: list[i].sort })
+        .eq("id", list[j].id)
+        .eq("user_id", user.id),
+    ]);
   }
 
   revalidatePath("/rutinas");
@@ -147,6 +168,20 @@ export async function setRoutineTime(routineId: string, time: TimeOfDay) {
   await supabase
     .from("routines")
     .update({ time_of_day: value })
+    .eq("id", routineId)
+    .eq("user_id", user.id);
+
+  revalidatePath("/rutinas");
+}
+
+// Cambia la categoría de una rutina (hogar / autocuidado).
+export async function setRoutineCategory(routineId: string, category: Category) {
+  const { supabase, user } = await requireUser();
+  const value: Category = category === "autocuidado" ? "autocuidado" : "hogar";
+
+  await supabase
+    .from("routines")
+    .update({ category: value })
     .eq("id", routineId)
     .eq("user_id", user.id);
 

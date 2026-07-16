@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import {
   toggleRoutineDay,
   setRoutineTime,
+  setRoutineCategory,
   renameRoutine,
   addSubtask,
   removeSubtask,
@@ -12,6 +13,7 @@ import {
 import {
   type Routine,
   type TimeOfDay,
+  type Category,
   CLEANING_SUBTASKS,
   WEEKDAY_SHORT,
 } from "@/lib/rutinas";
@@ -76,6 +78,25 @@ export default function RoutineEditor({ routine }: { routine: Routine }) {
           <option value="noche">🌙 Noche</option>
         </select>
       </div>
+
+      {/* Categoría (solo rutinas fijas) */}
+      {!routine.is_occasional && (
+        <div className="mt-2 flex items-center gap-2">
+          <span className="text-xs text-rose-700/60">Tipo:</span>
+          <select
+            value={routine.category}
+            onChange={(e) =>
+              startTransition(() =>
+                setRoutineCategory(routine.id, e.target.value as Category),
+              )
+            }
+            className="rounded-md border border-rose-200 px-2 py-1 text-xs text-rose-900 outline-none focus:border-rose-400"
+          >
+            <option value="hogar">🏠 Rutina hogar</option>
+            <option value="autocuidado">🧘 Autocuidado</option>
+          </select>
+        </div>
+      )}
 
       {/* Días (solo rutinas fijas) */}
       {!routine.is_occasional ? (

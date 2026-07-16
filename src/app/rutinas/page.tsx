@@ -14,6 +14,8 @@ import {
   DEFAULT_ROUTINES,
   TIME_LABELS,
   TIME_ORDER,
+  CATEGORY_LABELS,
+  CATEGORY_ORDER,
   WEEKDAY_SHORT,
   WEEKDAY_LONG,
   isoWeekday,
@@ -21,7 +23,8 @@ import {
   todayStr,
 } from "@/lib/rutinas";
 
-const ROUTINE_SELECT = "id, name, time_of_day, weekdays, is_occasional, sort, subtasks";
+const ROUTINE_SELECT =
+  "id, name, time_of_day, weekdays, is_occasional, sort, subtasks, category";
 
 export default async function RutinasPage() {
   const supabase = await createClient();
@@ -53,6 +56,7 @@ export default async function RutinasPage() {
         weekdays: r.weekdays,
         is_occasional: r.is_occasional,
         subtasks: r.subtasks,
+        category: r.category,
         sort: i,
       })),
     );
@@ -101,6 +105,7 @@ export default async function RutinasPage() {
   const todaysList = TIME_ORDER.flatMap((t) => todaysByTime[t]);
   const totalHoy = todaysList.length;
   const hechasHoy = todaysList.filter(routineDone).length;
+  const hechasOcasionales = occasional.filter(routineDone).length;
 
   // Renderiza un ítem del checklist (con o sin subtareas).
   function renderItem(r: Routine, occasionalStyle = false) {
@@ -129,6 +134,49 @@ export default async function RutinasPage() {
     );
   }
 
+  // Caja de reordenamiento + editor para un grupo (usado en "Configurar").
+  function editableGroup(list: Routine[], scope: string) {
+    return (
+      <ul className="mt-4 space-y-3">
+        {list.map((r, index) => (
+          <li key={r.id} className="flex gap-2">
+            <div className="flex flex-col pt-1">
+              <form action={moveRoutine}>
+                <input type="hidden" name="id" value={r.id} />
+                <input type="hidden" name="dir" value="up" />
+                <input type="hidden" name="scope" value={scope} />
+                <button
+                  type="submit"
+                  disabled={index === 0}
+                  aria-label="Subir"
+                  className="flex h-5 w-5 items-center justify-center text-rose-400 transition hover:text-rose-600 disabled:opacity-25"
+                >
+                  ▲
+                </button>
+              </form>
+              <form action={moveRoutine}>
+                <input type="hidden" name="id" value={r.id} />
+                <input type="hidden" name="dir" value="down" />
+                <input type="hidden" name="scope" value={scope} />
+                <button
+                  type="submit"
+                  disabled={index === list.length - 1}
+                  aria-label="Bajar"
+                  className="flex h-5 w-5 items-center justify-center text-rose-400 transition hover:text-rose-600 disabled:opacity-25"
+                >
+                  ▼
+                </button>
+              </form>
+            </div>
+            <div className="flex-1">
+              <RoutineEditor routine={r} />
+            </div>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
   const hoyContent = (
     <>
       {/* Checklist de hoy */}
@@ -142,18 +190,12 @@ export default async function RutinasPage() {
           </span>
         </div>
 
-        {totalHoy === 0 && occasional.length === 0 ? (
+        {totalHoy === 0 ? (
           <p className="mt-4 text-sm text-rose-700/60">
-            No hay tareas para hoy todavía. Añádelas en la pestaña “Configurar”. 🌱
+            Hoy no tienes rutinas fijas. Añádelas en la pestaña “Configurar”. 🌱
           </p>
         ) : (
           <div className="mt-5 space-y-5">
-            {todaysList.length === 0 && (
-              <p className="text-sm text-rose-700/60">
-                Hoy no tienes rutinas fijas. 🌸
-              </p>
-            )}
-
             {TIME_ORDER.map((t) =>
               todaysByTime[t].length > 0 ? (
                 <div key={t}>
@@ -163,21 +205,6 @@ export default async function RutinasPage() {
                   <div className="space-y-2">{todaysByTime[t].map((r) => renderItem(r))}</div>
                 </div>
               ) : null,
-            )}
-
-            {/* Ocasionales: color distinto (ámbar), ocultas por defecto. */}
-            {occasional.length > 0 && (
-              <details className="rounded-lg border border-amber-200 bg-amber-50/40 px-3 py-2">
-                <summary className="cursor-pointer select-none text-sm font-semibold text-amber-800">
-                  📦 Ocasionales{" "}
-                  <span className="text-xs font-normal text-amber-700/60">
-                    (tocar si hoy toca alguna)
-                  </span>
-                </summary>
-                <div className="mt-3 space-y-2">
-                  {occasional.map((r) => renderItem(r, true))}
-                </div>
-              </details>
             )}
           </div>
         )}
@@ -235,55 +262,67 @@ export default async function RutinasPage() {
     </>
   );
 
-  const configurarContent = (
-    <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-rose-100">
-      <h2 className="text-lg font-semibold text-rose-900">Configura tus rutinas</h2>
-      <p className="mt-1 text-sm text-rose-700/60">
-        Ajusta días, rango horario y subtareas de cada rutina.
+  const ocasionalesContent = (
+    <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-amber-100">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-amber-900">📦 Ocasionales</h2>
+        {occasional.length > 0 && (
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-700">
+            {hechasOcasionales}/{occasional.length}
+          </span>
+        )}
+      </div>
+      <p className="mt-1 text-sm text-amber-700/60">
+        Marca las que toquen hoy. No tienen días fijos.
       </p>
 
-      {routines.length > 0 && (
-        <ul className="mt-4 space-y-3">
-          {routines.map((r, index) => (
-            <li key={r.id} className="flex gap-2">
-              <div className="flex flex-col pt-1">
-                <form action={moveRoutine}>
-                  <input type="hidden" name="id" value={r.id} />
-                  <input type="hidden" name="dir" value="up" />
-                  <button
-                    type="submit"
-                    disabled={index === 0}
-                    aria-label="Subir"
-                    className="flex h-5 w-5 items-center justify-center text-rose-400 transition hover:text-rose-600 disabled:opacity-25"
-                  >
-                    ▲
-                  </button>
-                </form>
-                <form action={moveRoutine}>
-                  <input type="hidden" name="id" value={r.id} />
-                  <input type="hidden" name="dir" value="down" />
-                  <button
-                    type="submit"
-                    disabled={index === routines.length - 1}
-                    aria-label="Bajar"
-                    className="flex h-5 w-5 items-center justify-center text-rose-400 transition hover:text-rose-600 disabled:opacity-25"
-                  >
-                    ▼
-                  </button>
-                </form>
-              </div>
-              <div className="flex-1">
-                <RoutineEditor routine={r} />
-              </div>
-            </li>
-          ))}
-        </ul>
+      {occasional.length === 0 ? (
+        <p className="mt-4 text-sm text-amber-700/60">
+          Aún no tienes tareas ocasionales. Añádelas en “Configurar”. 🌱
+        </p>
+      ) : (
+        <div className="mt-5 space-y-2">{occasional.map((r) => renderItem(r, true))}</div>
       )}
-
-      <div className="mt-6 rounded-xl bg-rose-50/60 p-4">
-        <AddRoutineForm />
-      </div>
     </section>
+  );
+
+  const configurarContent = (
+    <>
+      {CATEGORY_ORDER.map((cat) => {
+        const list = fixed.filter((r) => r.category === cat);
+        return (
+          <section
+            key={cat}
+            className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-rose-100"
+          >
+            <h2 className="text-lg font-semibold text-rose-900">
+              {CATEGORY_LABELS[cat]}
+            </h2>
+            {list.length === 0 ? (
+              <p className="mt-2 text-sm text-rose-700/60">Sin tareas aquí todavía.</p>
+            ) : (
+              editableGroup(list, cat)
+            )}
+          </section>
+        );
+      })}
+
+      <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-amber-100">
+        <h2 className="text-lg font-semibold text-amber-900">📦 Ocasionales</h2>
+        {occasional.length === 0 ? (
+          <p className="mt-2 text-sm text-amber-700/60">Sin tareas aquí todavía.</p>
+        ) : (
+          editableGroup(occasional, "ocasional")
+        )}
+      </section>
+
+      <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-rose-100">
+        <h2 className="text-lg font-semibold text-rose-900">Añadir tarea</h2>
+        <div className="mt-4 rounded-xl bg-rose-50/60 p-4">
+          <AddRoutineForm />
+        </div>
+      </section>
+    </>
   );
 
   return (
@@ -323,6 +362,7 @@ export default async function RutinasPage() {
         <Tabs
           tabs={[
             { id: "hoy", label: "📅 Hoy", content: hoyContent },
+            { id: "ocasionales", label: "📦 Ocasionales", content: ocasionalesContent },
             { id: "configurar", label: "⚙️ Configurar", content: configurarContent },
           ]}
         />

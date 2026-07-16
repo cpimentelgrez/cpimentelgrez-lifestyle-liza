@@ -39,7 +39,7 @@ export default async function SeguimientoPage() {
 
   const { data: routinesData } = await supabase
     .from("routines")
-    .select("id, name, time_of_day, weekdays, is_occasional, sort, subtasks")
+    .select("id, name, time_of_day, weekdays, is_occasional, sort, subtasks, category")
     .eq("user_id", user.id)
     .eq("is_occasional", false);
 

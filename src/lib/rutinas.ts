@@ -1,6 +1,7 @@
 // Utilidades compartidas para el módulo de rutinas.
 
 export type TimeOfDay = "manana" | "tarde" | "noche";
+export type Category = "hogar" | "autocuidado";
 
 export type Routine = {
   id: string;
@@ -10,7 +11,15 @@ export type Routine = {
   is_occasional: boolean;
   sort: number;
   subtasks: string[];
+  category: Category;
 };
+
+export const CATEGORY_LABELS: Record<Category, string> = {
+  hogar: "🏠 Rutina hogar",
+  autocuidado: "🧘 Autocuidado",
+};
+
+export const CATEGORY_ORDER: Category[] = ["hogar", "autocuidado"];
 
 // Subtareas sugeridas para tareas de limpieza.
 export const CLEANING_SUBTASKS = [
@@ -62,17 +71,18 @@ export const DEFAULT_ROUTINES: {
   weekdays: number[];
   is_occasional: boolean;
   subtasks: string[];
+  category: Category;
 }[] = [
-  { name: "Paseo de Lily", time_of_day: "manana", weekdays: [1, 2, 3, 4, 5, 6, 7], is_occasional: false, subtasks: [] },
-  { name: "Cocinar", time_of_day: "tarde", weekdays: [1, 2, 3, 4, 5, 6, 7], is_occasional: false, subtasks: [] },
-  { name: "Limpiar", time_of_day: "manana", weekdays: [1, 3, 5], is_occasional: false, subtasks: ["Cocina", "Baño", "Dormitorio", "Aspirar"] },
-  { name: "Gimnasio", time_of_day: "manana", weekdays: [1, 3, 5], is_occasional: false, subtasks: [] },
-  { name: "Lavar ropa", time_of_day: "manana", weekdays: [6], is_occasional: false, subtasks: [] },
-  { name: "Preparar maletas", time_of_day: "manana", weekdays: [], is_occasional: true, subtasks: [] },
-  { name: "Guardar maletas", time_of_day: "manana", weekdays: [], is_occasional: true, subtasks: [] },
-  { name: "Comprar pasajes", time_of_day: "tarde", weekdays: [], is_occasional: true, subtasks: [] },
-  { name: "Supermercado", time_of_day: "tarde", weekdays: [], is_occasional: true, subtasks: [] },
-  { name: "Pagar cuentas", time_of_day: "tarde", weekdays: [], is_occasional: true, subtasks: [] },
+  { name: "Paseo de Lily", time_of_day: "manana", weekdays: [1, 2, 3, 4, 5, 6, 7], is_occasional: false, subtasks: [], category: "hogar" },
+  { name: "Cocinar", time_of_day: "tarde", weekdays: [1, 2, 3, 4, 5, 6, 7], is_occasional: false, subtasks: [], category: "hogar" },
+  { name: "Limpiar", time_of_day: "manana", weekdays: [1, 3, 5], is_occasional: false, subtasks: ["Cocina", "Baño", "Dormitorio", "Aspirar"], category: "hogar" },
+  { name: "Gimnasio", time_of_day: "manana", weekdays: [1, 3, 5], is_occasional: false, subtasks: [], category: "autocuidado" },
+  { name: "Lavar ropa", time_of_day: "manana", weekdays: [6], is_occasional: false, subtasks: [], category: "hogar" },
+  { name: "Preparar maletas", time_of_day: "manana", weekdays: [], is_occasional: true, subtasks: [], category: "hogar" },
+  { name: "Guardar maletas", time_of_day: "manana", weekdays: [], is_occasional: true, subtasks: [], category: "hogar" },
+  { name: "Comprar pasajes", time_of_day: "tarde", weekdays: [], is_occasional: true, subtasks: [], category: "hogar" },
+  { name: "Supermercado", time_of_day: "tarde", weekdays: [], is_occasional: true, subtasks: [], category: "hogar" },
+  { name: "Pagar cuentas", time_of_day: "tarde", weekdays: [], is_occasional: true, subtasks: [], category: "hogar" },
 ];
 
 // Día de la semana ISO (1=Lunes..7=Domingo) a partir de un Date.

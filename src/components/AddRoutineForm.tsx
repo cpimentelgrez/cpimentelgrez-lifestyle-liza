@@ -56,7 +56,7 @@ export default function AddRoutineForm() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-end gap-4">
         <div>
           <label
             htmlFor="time_of_day"
@@ -75,7 +75,26 @@ export default function AddRoutineForm() {
           </select>
         </div>
 
-        <label className="flex items-center gap-2 self-end pb-2 text-sm text-rose-900">
+        {!occasional && (
+          <div>
+            <label
+              htmlFor="category"
+              className="block text-xs font-medium text-rose-700/70"
+            >
+              Tipo
+            </label>
+            <select
+              id="category"
+              name="category"
+              className="mt-1 rounded-lg border border-rose-200 px-3 py-2 text-sm text-rose-900 outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-200"
+            >
+              <option value="hogar">🏠 Rutina hogar</option>
+              <option value="autocuidado">🧘 Autocuidado</option>
+            </select>
+          </div>
+        )}
+
+        <label className="flex items-center gap-2 pb-2 text-sm text-rose-900">
           <input
             type="checkbox"
             name="is_occasional"
