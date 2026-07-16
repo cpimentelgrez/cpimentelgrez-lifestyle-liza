@@ -11,6 +11,9 @@ import RoutineEditor from "@/components/RoutineEditor";
 import AddRoutineForm from "@/components/AddRoutineForm";
 import Tabs from "@/components/Tabs";
 import BottomNav from "@/components/BottomNav";
+import PeriodForm from "@/components/PeriodForm";
+import { deletePeriod } from "../periodos/actions";
+import { type SpecialPeriod, PERIOD_LABELS, isDateInPeriod } from "@/lib/periods";
 import {
   type Routine,
   type TimeOfDay,
@@ -98,7 +101,27 @@ export default async function RutinasPage() {
     return isRoutineDone(r, doneSubtasks.get(r.id), rowExists.has(r.id));
   }
 
-  const fixed = routines.filter((r) => !r.is_occasional);
+  const { data: periodsData } = await supabase
+    .from("special_periods")
+    .select("id, type, start_date, end_date, note")
+    .eq("user_id", user.id)
+    .order("start_date", { ascending: true });
+  const periods = (periodsData as SpecialPeriod[]) ?? [];
+  const activePeriod = periods.find((p) => isDateInPeriod(p, today));
+
+  const { data: healthRow } = await supabase
+    .from("health_states")
+    .select("state")
+    .eq("user_id", user.id)
+    .eq("log_date", today)
+    .maybeSingle();
+  const todayHealth = healthRow?.state as string | undefined;
+
+  // Mientras dura un periodo de vacaciones/viaje, las rutinas de hogar se pausan.
+  const fixedAll = routines.filter((r) => !r.is_occasional);
+  const fixed = activePeriod
+    ? fixedAll.filter((r) => r.category !== "hogar")
+    : fixedAll;
   const occasional = routines.filter((r) => r.is_occasional);
 
   const tomorrow = addDays(today, 1);
@@ -218,6 +241,23 @@ export default async function RutinasPage() {
           </span>
         </div>
 
+        {activePeriod && (
+          <div className="mt-3 rounded-lg bg-rose-50 px-3 py-2.5 text-sm text-rose-800">
+            {PERIOD_LABELS[activePeriod.type]} hasta{" "}
+            {new Date(activePeriod.end_date + "T00:00:00").toLocaleDateString("es-ES", {
+              day: "numeric",
+              month: "long",
+            })}{" "}
+            · tus rutinas de hogar están en pausa.
+          </div>
+        )}
+
+        {todayHealth && (
+          <div className="mt-3 rounded-lg bg-rose-50 px-3 py-2.5 text-sm text-rose-800">
+            💗 Modo cuidado activado hoy — no te exijas, ve a tu ritmo.
+          </div>
+        )}
+
         {totalHoy === 0 ? (
           <p className="mt-4 text-sm text-rose-700/60">
             Hoy no tienes rutinas fijas. Añádelas en la pestaña “Configurar”. 🌱
@@ -277,8 +317,8 @@ export default async function RutinasPage() {
         )}
       </section>
 
-      {/* Vista semanal completa */}
-      {fixed.length > 0 && (
+      {/* Vista semanal completa (siempre muestra todas, aunque hoy estén pausadas) */}
+      {fixedAll.length > 0 && (
         <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-rose-100">
           <h2 className="text-lg font-semibold text-rose-900">Vista semanal</h2>
           <p className="mt-1 text-sm text-rose-700/60">
@@ -304,7 +344,7 @@ export default async function RutinasPage() {
                 </tr>
               </thead>
               <tbody>
-                {fixed.map((r) => (
+                {fixedAll.map((r) => (
                   <tr key={r.id} className="border-t border-rose-100">
                     <td className="p-2 text-rose-900">{r.name}</td>
                     {[1, 2, 3, 4, 5, 6, 7].map((d) => (
@@ -363,6 +403,47 @@ export default async function RutinasPage() {
         <h2 className="text-lg font-semibold text-rose-900">Añadir tarea</h2>
         <div className="mt-4 rounded-xl bg-rose-50/60 p-4">
           <AddRoutineForm />
+        </div>
+      </section>
+
+      <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-rose-100">
+        <h2 className="text-lg font-semibold text-rose-900">🏖️ Vacaciones y viajes</h2>
+        <p className="mt-1 text-sm text-rose-700/60">
+          Agenda tus vacaciones o viajes de trabajo. Se te recuerda armar la maleta y
+          se pausan las rutinas de hogar mientras dure.
+        </p>
+
+        {periods.length > 0 && (
+          <ul className="mt-4 space-y-2">
+            {periods.map((p) => (
+              <li
+                key={p.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-rose-100 px-3 py-2"
+              >
+                <div>
+                  <p className="text-sm font-medium text-rose-900">
+                    {PERIOD_LABELS[p.type]}
+                  </p>
+                  <p className="text-xs text-rose-700/60">
+                    {p.start_date} → {p.end_date}
+                  </p>
+                </div>
+                <form action={deletePeriod}>
+                  <input type="hidden" name="id" value={p.id} />
+                  <button
+                    type="submit"
+                    className="text-xs text-rose-400 hover:text-rose-600 hover:underline"
+                  >
+                    Quitar
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="mt-4 rounded-xl bg-rose-50/60 p-4">
+          <PeriodForm />
         </div>
       </section>
     </>
